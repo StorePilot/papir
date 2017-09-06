@@ -12,4 +12,7 @@
 
 <style>
   /* CSS */
+  html {
+    font-family: 'Open Sans', sans-serif;
+  }
 </style>
