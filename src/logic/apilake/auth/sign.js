@@ -5,77 +5,85 @@ export default class Sign {
   constructor () {
     let scope = this
 
-    this.gen = (
-      type = 'oauth_1.0a',
-      version = '1.0',
-      algorithm = 'HMAC-SHA1',
-      uri = location.href,
-      method = 'GET',
-      key = '',
-      token = { key: '', secret: '' },
-      secret = '',
-      nonce = '',
-      nonceLength = 6,
-      timestampLength = 30,
-      indexArrays = true,
-      emptyParams = false,
-      requester = null,
-      base64 = true,
-      ampersand = true,
-      sort = true
-    ) => {
-      let baseString = method + '&' + scope.encode(scope.strip(uri)) + '&'
+    this.gen = (opt) => {
+      let conf = {
+        type: 'oauth_1.0a',
+        version:'1.0',
+        algorithm: 'HMAC-SHA1',
+        url: location.href,
+        method: 'GET',
+        key: '',
+        secret: '',
+        token: { key: '', secret: '' },
+        nonce: '',
+        nonceLength: 6,
+        timestampLength: 30,
+        indexArrays: true,
+        emptyParams: false,
+        requester: null,
+        base64: true,
+        ampersand: true,
+        sort: true
+      }
+
+      Object.keys(conf).forEach((key) => {
+        if (typeof opt[key] !== 'undefined') {
+          conf[key] = opt[key]
+        }
+      })
+
+      let baseString = conf.method + '&' + scope.encode(scope.strip(conf.url)) + '&'
       let hash = ''
       let mergedParams = []
-      scope.getParams(uri).forEach(param => {
+      scope.getParams(conf.url).forEach(param => {
         mergedParams.push({
           key: param.key,
           value: param.value
         })
       })
 
-      if (type === 'oauth_1.0a') {
+      if (conf.type === 'oauth_1.0a') {
         mergedParams.concat([
           {
             key: 'oauth_consumer_key',
-            value: key
+            value: conf.key
           },
           {
             key: 'oauth_signature_method',
-            value: algorithm
+            value: conf.algorithm
           },
           {
             key: 'oauth_token',
-            value: token.key
+            value: conf.token.key
           },
           {
             key: 'oauth_timestamp',
-            value: scope.timestamp(timestampLength)
+            value: scope.timestamp(conf.timestampLength)
           },
           {
             key: 'oauth_nonce',
-            value: (nonce === '' && nonceLength > 0) ? scope.nonce(nonceLength) : nonce
+            value: (conf.nonce === '' && conf.nonceLength > 0) ? scope.nonce(conf.nonceLength) : conf.nonce
           },
           {
             key: 'oauth_version',
-            value: version
+            value: conf.version
           }
         ])
 
-        if (requester !== null) {
+        if (conf.requester !== null) {
           mergedParams.push({
             key: 'xoauth_requester_id',
-            value: requester
+            value: conf.requester
           })
         }
 
-        let paramString = scope.paramString(mergedParams, emptyParams, sort, indexArrays)
+        let paramString = scope.paramString(mergedParams, conf.emptyParams, conf.sort, conf.indexArrays)
         mergedParams = paramString.decoded
         baseString += scope.encode(paramString.string)
 
-        let signKey = scope.signKey(secret, token.secret, ampersand)
+        let signKey = scope.signKey(conf.secret, conf.token.secret, conf.ampersand)
 
-        if (base64 && algorithm === 'HMAC-SHA1') {
+        if (conf.base64 && conf.algorithm === 'HMAC-SHA1') {
           hash = crypto.createHmac('sha1', signKey).update(baseString).digest('base64')
         }
       }
@@ -200,9 +208,9 @@ export default class Sign {
     }
 
     // Encode decoded !*'()/ from string
-    this.encode = (uri, indexArrays = true) => {
+    this.encode = (url, indexArrays = true) => {
       if (indexArrays) {
-        uri = scope.indexArrayQuery(uri)
+        url = scope.indexArrayQuery(url)
       }
       return encodeURIComponent(value)
         .replace(/!/g, '%21')
@@ -213,7 +221,7 @@ export default class Sign {
     }
 
     // Decode encoded !*'()/ recursively from string
-    this.decode = (uri) => {
+    this.decode = (url) => {
       let decode = (u) => {
         return decodeURIComponent(u)
           .replace(/%21/g, '!')
@@ -227,20 +235,20 @@ export default class Sign {
         u = u || ''
         return u !== decode(u)
       }
-      while (encoded(uri)) {
-        uri = decode(uri)
+      while (encoded(url)) {
+        url = decode(url)
       }
-      return uri
+      return url
     }
 
-    this.indexArrayQuery = (uri) => {
+    this.indexArrayQuery = (url) => {
       let preserved = ''
-      let qIndex = uri.indexOf('?')
+      let qIndex = url.indexOf('?')
       if (qIndex !== -1) {
-        preserved = uri.substr(0, qIndex)
-        uri = uri.substr((qIndex + 1))
+        preserved = url.substr(0, qIndex)
+        url = url.substr((qIndex + 1))
       }
-      let params = uri.split('&')
+      let params = url.split('&')
       let preKey = null
       let filled = []
       let i = 0
@@ -266,22 +274,22 @@ export default class Sign {
         }
         filled.push(param)
       })
-      uri = preserved
+      url = preserved
       filled.forEach(param => {
-        uri += param + '&'
+        url += param + '&'
       })
-      return filled.length > 0 ? uri.slice(0, -1) : uri
+      return filled.length > 0 ? url.slice(0, -1) : url
     }
 
-    this.stripUri = (uri) => {
+    this.stripUri = (url) => {
       let a = document.createElement('a')
-      a.setAttribute('href', uri)
+      a.setAttribute('href', url)
       return a.protocol + '//' + a.host + a.pathname
     }
 
-    this.getParams = (uri) => {
+    this.getParams = (url) => {
       let params = []
-      let split = uri.split('?')
+      let split = url.split('?')
       if (typeof split[1] !== 'undefined') {
         let queries = split[1].split('&')
         queries.forEach(q => {

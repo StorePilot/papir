@@ -4,15 +4,18 @@ import $ from 'jquery'
 export default class Oauth {
 
   constructor () {
-    let scope = this
-    let config = {
+    let sign = new Sign()
+
+    this.conf = {
       addDataToQuery: true,
+      addAuthHeaders: false,
+      dualAuth: false,
       type: 'oauth_1.0a',
       version: '1.0',
       algorithm: 'HMAC-SHA1',
       key: '',
-      token: { key: '', secret: '' },
       secret: '',
+      token: { key: '', secret: '' },
       nonce: '',
       nonceLength: 6,
       timestampLength: 30,
@@ -22,36 +25,73 @@ export default class Oauth {
       base64: true,
       ampersand: true,
       sort: true,
-      tale: '_wpnonce=' + wcApiSettings.nonce
-    }
-    let sign = new Sign()
-
-    this.get = (url, data = null, upload = false) => {
-      return scope.custom('GET', url, data, upload)
+      tale: '' //'_wpnonce=' + wcApiSettings.nonce
     }
 
-    this.post = (url, data = null, upload = false) => {
-      return scope.custom('POST', url, data, upload)
+    this.getConf = JSON.parse(JSON.stringify(conf))
+    this.postConf = JSON.parse(JSON.stringify(conf))
+    this.putConf = JSON.parse(JSON.stringify(conf))
+    this.putConf.dualAuth = true
+    this.deleteConf = JSON.parse(JSON.stringify(conf))
+    this.optionsConf = JSON.parse(JSON.stringify(conf))
+
+    this.get = (
+      url,
+      data = null,
+      upload = false,
+      conf = getConf
+    ) => {
+      return this.custom('GET', url, data, upload, conf)
     }
 
-    this.put = (url, data = null, upload = false) => {
-      return scope.custom('PUT', url, data, upload)
+    this.post = (
+      url,
+      data = null,
+      upload = false,
+      conf = postConf
+    ) => {
+      return this.custom('POST', url, data, upload, conf)
     }
 
-    this.delete = (url, data = null, upload = false) => {
-      return scope.custom('DELETE', url, data, upload)
+    this.put = (
+      url,
+      data = null,
+      upload = false,
+      conf = putConf
+    ) => {
+      return this.custom('PUT', url, data, upload, conf)
     }
 
-    this.options = (url, data = null, upload = false) => {
-      return scope.custom('OPTIONS', url, data, upload)
+    this.delete = (
+      url,
+      data = null,
+      upload = false,
+      conf = deleteConf
+    ) => {
+      return this.custom('DELETE', url, data, upload, conf)
+    }
+
+    this.options = (
+      url,
+      data = null,
+      upload = false,
+      conf = optionsConf
+    ) => {
+      return this.custom('OPTIONS', url, data, upload, conf)
     }
     
-    this.custom = (method, url, data = null, upload = false) => {
+    this.custom = (
+      method,
+      url,
+      data = null,
+      upload = false,
+      conf = this.conf
+    ) => {
       let abort
       let abortPromise = new Promise((resolve) => {
         abort = resolve
       })
-      let request = scope.request(method, url, abortPromise, data, upload)
+      let request = this.request(method, url, abortPromise, data, upload, conf)
       request.abort = abort
       return request
     }
@@ -61,257 +101,185 @@ export default class Oauth {
       url,
       abortPromise,
       data = null,
-      upload = false
+      upload = false,
+      conf = this.conf
     ) => {
-      let xhr = new window.XMLHttpRequest()
-
-      if (config.addDataToQuery && upload === false && data !== null) {
-        if (options.url.indexOf('?') !== -1) {
-          url += '&' + $.param(JSON.parse(data))
-        } else {
-          url += '?' + $.param(JSON.parse(data))
-        }
+      let request = {
+        url: url,
+        type: method
       }
+      conf = JSON.parse(JSON.stringify(conf))
+      let dualAuth = conf.dualAuth
+      let indexArrays = conf.indexArrays
+      let addDataToQuery = conf.addDataToQuery
+      let addAuthHeaders = conf.addAuthHeaders
 
-      if (config.indexArrays) {
-        url = sign.indexArrayQuery(url)
-      }
-
-      let genSign = sign.gen(
-        config.type,
-        config.version,
-        config.algorithm,
-        url,
-        method,
-        config.key,
-        config.token,
-        config.secret,
-        config.nonce,
-        config.nonceLength,
-        config.timestampLength,
-        config.indexArrays,
-        config.emptyParams,
-        config.requester,
-        config.base64,
-        config.ampersand,
-        config.sort
-      )
-
-      if (!config.addDataToQuery) {
-        url = sign.stripUri(url)
-        url += '?' + genSign.string
-      }
-
-      if (config.indexArrays) {
-        url = sign.indexArrayQuery(url)
-      }
-
-      return new Promise((resolve, reject) => {
-        let request = {
-          url: url,
-          type: method,
-          success: (body, status, response) => {
-            resolve({
-              body: body,
-              status: status,
-              response: response
-            })
-          },
-          xhr: () => {
-            return xhr
-          },
-          error: (error) => {
-            reject(error)
-          }
-        }
-
-        if (!config.addDataToQuery) {
-          request.headers = {
-            Authorization: genSign.header
-          }
-          request.contentType = 'application/json'
-          request.data = data
-        } else {
-          request.processData = false
-          request.headers = {
-            Accept: 'application/json'
-          }
-          request.contentType = 'text/plain'
-        }
-
-        if (config.addDataToQuery && url.indexOf('_method=PUT') !== -1) {
-          let url1 = url.replace('_method=PUT&', '')
-          let url2 = url
-
-          let genSign1 = sign.gen(
-            config.type,
-            config.version,
-            config.algorithm,
-            url1,
-            'OPTIONS',
-            config.key,
-            config.token,
-            config.secret,
-            config.nonce,
-            config.nonceLength,
-            config.timestampLength,
-            config.indexArrays,
-            config.emptyParams,
-            config.requester,
-            config.base64,
-            config.ampersand,
-            config.sort
-          )
-
-          let genSign2 = sign.gen(
-            config.type,
-            config.version,
-            config.algorithm,
-            url2,
-            'OPTIONS',
-            config.key,
-            config.token,
-            config.secret,
-            config.nonce,
-            config.nonceLength,
-            config.timestampLength,
-            config.indexArrays,
-            config.emptyParams,
-            config.requester,
-            config.base64,
-            config.ampersand,
-            config.sort
-          )
-
-          url1 = sign.stripUri(url1)
-          url1 += '?' + genSign1.string
-          url1 = sign.indexArrayQuery(url1)
-
-          request.url = url1
-          request.type = 'OPTIONS'
-          request.headers = {
-            Authorization: genSign2.header
-          }
-          request.contentType = 'application/json'
-          request.data = data
-        }
-
+      if (data !== null) {
         if (upload) {
-          request.cache = false
-          request.contentType = false
-          request.processData = false
-          request.data = data
+          request = this.makeUpload(request, data, indexArrays, conf)
+        } else if (addDataToQuery) {
+          request = this.makeDataQuery(request, data, indexArrays)
+        } else if (dualAuth) {
+          request = this.makeDataDualAuth(request, data, indexArrays, conf)
+        } else {
+          request = this.makeData(request, data, indexArrays, conf)
         }
-
-        if (config.tale !== '') {
-          if (request.url.indexOf('?') === -1) {
-            request.url += '?' + tale
-          } else {
-            request.url += '&' + tale
-          }
+      } else if (addAuthHeaders) {
+        let config = JSON.parse(JSON.stringify(conf))
+        config.url = request.url
+        config.method = request.type
+        let signGen = sign.gen(config)
+        request.url = sign.stripUri(request.url) + '?' + signGen.string
+        request.headers = {
+          Authorization: signGen.header
         }
+      }
 
-        $.ajax(request)
+      request = this.makeAbortable(request, abortPromise)
+      let promise = this.makePromise(request)
+      $.ajax(request)
 
-        abortPromise.then(() => {
-          xhr.abort()
-        })
+      return promise
+    }
 
+    this.makeDataDualAuth = (request, data, indexArrays = true, conf = this.conf) => {
+      let config = JSON.parse(JSON.stringify(conf))
+      config.indexArrays = indexArrays
+      let method = request.type
+      let url = request.url
+      request.type = config.method = 'OPTIONS'
+      request.contentType = 'application/json'
+      request.data = data
+
+      // Make Url
+      config.url = request.url.replace('_method=' + method + '&', '').replace('_method=' + method, '')
+      let signGen = sign.gen(config)
+      request.url = sign.stripUri(config.url) + '?' + signGen.string
+
+      // Make Header
+      config.url = url
+      signGen = sign.gen(config)
+      request.headers = {
+        Authorization: signGen.header
+      }
+
+      return request
+    }
+
+    this.makeDataQuery = (request, data, indexArrays = true) => {
+      if (request.url.indexOf('?') !== -1) {
+        request.url += '&' + $.param(JSON.parse(data))
+      } else {
+        request.url += '?' + $.param(JSON.parse(data))
+      }
+      if (indexArrays) {
+        request.url = sign.indexArrayQuery(request.url)
+      }
+      request.processData = false
+      request.headers = {
+        Accept: 'application/json'
+      }
+      request.contentType = 'text/plain'
+      return request
+    }
+
+    this.makeData = (request, data, indexArrays = true, conf = this.conf) => {
+      let config = JSON.parse(JSON.stringify(conf))
+      config.url = request.url
+      config.method = request.type
+      config.indexArrays = indexArrays
+      let signGen = sign.gen(config)
+      request.url = sign.stripUri(request.url) + '?' + signGen.string
+      request.headers = {
+        Authorization: signGen.header
+      }
+      request.contentType = 'application/json'
+      request.data = data
+      return request
+    }
+
+    this.makeUpload = (request, data, indexArrays = true, conf = this.conf) => {
+      request = this.makeData(request, data, indexArrays, conf)
+      request.cache = false
+      request.contentType = false
+      request.processData = false
+      return request
+    }
+
+    this.makeTale = (request, conf = this.conf) => {
+      if (conf.tale !== '') {
+        if (request.url.indexOf('?') === -1) {
+          request.url += '?' + conf.tale
+        } else {
+          request.url += '&' + conf.tale
+        }
+      }
+      return request
+    }
+
+    this.makePromise = (request) => {
+      return new Promise((resolve, reject) => {
+        request.success = (body, status, response) => {
+          resolve({
+            body: body,
+            status: status,
+            response: response
+          })
+        }
+        request.error = (error) => {
+          reject(error)
+        }
       })
     }
 
+    this.makeAbortable = (request, promise) => {
+      let xhr = new window.XMLHttpRequest()
+      request.xhr = () => {
+        return xhr
+      }
+      promise.then(() => {
+        xhr.abort()
+      })
+      return request
+    }
+
+    this.verifyToken = (url, token = '') => {
+      window.open(url + '?' + (token !== '' ? $.param({ oauth_token: token }) : ''),
+        '_blank'
+      )
+    }
+
+    this.getTokenRequest = (url) => {
+      let scope = this
+      let conf = JSON.parse(JSON.stringify(this.getConf))
+      conf.addDataToQuery = false
+      conf.addAuthHeaders = true
+      return new Promise((resolve, reject) => {
+        scope.get(url, null, false, false, conf).then(res => {
+          resolve(res)
+        }).catch(e => {
+          reject(e)
+        })
+      })
+    }
+
+    this.getTokenAccess = (url, requestToken, requestTokenSecret, verifierToken) => {
+      let url = url + '?oauth_verifier=' + verifierToken
+      let scope = this
+      let conf = JSON.parse(JSON.stringify(this.getConf))
+      conf.addDataToQuery = false
+      conf.addAuthHeaders = true
+      conf.key = requestToken
+      conf.secret = requestTokenSecret
+      return new Promise((resolve, reject) => {
+        scope.get(url, null, false, false, conf).then(res => {
+          resolve(res)
+        }).catch(e => {
+          reject(e)
+        })
+      })
+    }
+    
   }
 
 }
-
-/**
-
- @todo
- getRequestToken (endpoint = '') {
-    let url = this.getUrl() + endpoint
-    return rx.Observable.fromPromise($.ajax({
-      url: url,
-      type: 'GET',
-      headers: this.oauth.toHeader(this.oauth.authorize({
-        url: url,
-        method: 'GET'
-      }))
-    }).promise()).map(results => {
-      let token = this.decodeTokenResponse(results)
-      return token
-    })
-  }
-
- getVerifierToken (endpoint = '', requestToken) {
-    window.open(
-      this.getUrl() + endpoint + '?' + $.param({
-        oauth_token: requestToken
-      }),
-      '_blank'
-    )
-  }
-
- getAccessToken (endpoint = '', requestToken, requestTokenSecret, verifierToken) {
-    let url = this.getUrl() + endpoint + '?oauth_verifier=' + verifierToken
-    return rx.Observable.fromPromise($.ajax({
-      url: url,
-      type: 'GET',
-      headers: {
-        Authorization: this.oauth.toHeader(this.oauth.authorize({
-          url: url,
-          method: 'GET'
-        }, {
-          key: requestToken,
-          secret: requestTokenSecret
-        })).Authorization
-      }
-    }).promise()).map(results => {
-      let token = this.decodeTokenResponse(results)
-      this.setToken(token)
-      return token
-    })
-  }
-
- decodeTokenResponse (results) {
-    let token = {
-      required: false,
-      confirmed: false
-    }
-    let isJson = function (string) {
-      let is = true
-      try {
-        $.parseJSON(string)
-      } catch (e) {
-        is = false
-      }
-      return is
-    }
-    if (typeof results === 'string') {
-      if (isJson(results)) {
-        // @todo - Automatically find which keys contains tokenKey / tokenSecret / confirmed
-        token = $.parseJSON(results)
-        token.required = true
-      } else {
-        let split = results.split('&')
-        split.forEach(param => {
-          let par = param.split('=')
-          switch (par[0]) {
-            case 'oauth_token':
-              token.key = par[1]
-              token.required = true
-              break
-            case 'oauth_token_secret':
-              token.secret = par[1]
-              token.required = true
-              break
-            case 'oauth_callback_confirmed':
-              token.confirmed = String(par[1]) === 'true'
-              break
-          }
-        })
-      }
-    }
-    return token
-  }
-
- **/
