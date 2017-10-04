@@ -1,6 +1,7 @@
 import crypto from 'crypto'
+import util from './util'
 
-export default class Sign {
+class Sign {
 
   constructor () {
     let scope = this
@@ -58,11 +59,11 @@ export default class Sign {
           },
           {
             key: 'oauth_timestamp',
-            value: scope.timestamp(conf.timestampLength)
+            value: util.timestamp(conf.timestampLength)
           },
           {
             key: 'oauth_nonce',
-            value: (conf.nonce === '' && conf.nonceLength > 0) ? scope.nonce(conf.nonceLength) : conf.nonce
+            value: (conf.nonce === '' && conf.nonceLength > 0) ? util.nonce(conf.nonceLength) : conf.nonce
           },
           {
             key: 'oauth_version',
@@ -134,19 +135,6 @@ export default class Sign {
       }
     }
 
-    this.timestamp = (length = 30) => {
-      return Number(String(new Date().getTime()).substring(0, length))
-    }
-
-    this.nonce = (length = 6) => {
-      let nonce = ''
-      let possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-      for (let i = 0; i < length; i++) {
-        nonce += possible.charAt(Math.floor(Math.random() * possible.length))
-      }
-      return nonce
-    }
-
     this.signKey = (secret, tokenSecret, ampersand = true) => {
       if (ampersand || tokenSecret !== '') {
         return scope.encode(secret) + '&' + scope.encode(tokenSecret)
@@ -210,7 +198,7 @@ export default class Sign {
     // Encode decoded !*'()/ from string
     this.encode = (url, indexArrays = true) => {
       if (indexArrays) {
-        url = scope.indexArrayQuery(url)
+        url = util.indexArrayQuery(url)
       }
       return encodeURIComponent(value)
         .replace(/!/g, '%21')
@@ -241,52 +229,6 @@ export default class Sign {
       return url
     }
 
-    this.indexArrayQuery = (url) => {
-      let preserved = ''
-      let qIndex = url.indexOf('?')
-      if (qIndex !== -1) {
-        preserved = url.substr(0, qIndex)
-        url = url.substr((qIndex + 1))
-      }
-      let params = url.split('&')
-      let preKey = null
-      let filled = []
-      let i = 0
-      params.forEach(param => {
-        if (param.indexOf('[]') !== -1) {
-          if (i === 0 || param.indexOf(preKey) === -1) {
-            i = 0
-            let key = preKey = param.split('=')[0]
-            key = key.replace(/\[\]/g, '[0]')
-            param = param.replace(preKey, key)
-            i++
-          } else if (preKey !== null && param.indexOf(preKey) !== -1) {
-            let key = param.split('=')[0]
-            let index = key.lastIndexOf('[]')
-            key = key.substring(0, index) + '[' + i + ']' + key.substring(index + 3)
-            key = key.replace(/\[\]/g, '[0]')
-            param = param.replace(preKey, key)
-            i++
-          }
-        } else {
-          i = 0
-          preKey = null
-        }
-        filled.push(param)
-      })
-      url = preserved
-      filled.forEach(param => {
-        url += param + '&'
-      })
-      return filled.length > 0 ? url.slice(0, -1) : url
-    }
-
-    this.stripUri = (url) => {
-      let a = document.createElement('a')
-      a.setAttribute('href', url)
-      return a.protocol + '//' + a.host + a.pathname
-    }
-
     this.getParams = (url) => {
       let params = []
       let split = url.split('?')
@@ -313,3 +255,5 @@ export default class Sign {
   }
 
 }
+
+export default new Sign()
