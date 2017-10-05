@@ -57,8 +57,12 @@ export default class RequesterOauth extends Requester {
         request.headers['Authorization'] = signGen.header
       }
 
-      request = this.makeTale(request, abortPromise)
+      request = this.makeTale(request, config)
       request = this.makeAbortable(request, abortPromise)
+      request.responseType = conf.responseType
+      request.transformResponse = (response) => {
+        return response
+      }
 
       return axios(request)
     }

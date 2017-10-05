@@ -9,7 +9,7 @@ export default class Requester {
 
   constructor (customConf = {}) {
 
-    this.conf = Object.assign({
+    this.conf = {
       addDataToQuery: true,
       dualAuth: false,
       type: 'oauth_1.0a',
@@ -30,6 +30,7 @@ export default class Requester {
       taleBefore: '', // Queryparams which will be added at the end of url, after all is set, before nonce
       taleNonce: '', // @note: Ex. To use for nonce through cookies: '_wpnonce=wcApiSettings.nonce'
       taleAfter: '', // Queryparams which will be added at the end of url, after all is set, after nonce
+      responseType: 'json', // options 'arraybuffer', 'blob', 'document', 'json', 'text', 'stream'
       // Conf specific per method type. (Same Options as above)
       get: {},
       post: {},
@@ -40,126 +41,145 @@ export default class Requester {
       trace: {},
       connect: {},
       options: {}
-    }, customConf)
-
-    this.getConf = Object.assign(this.deepClone(this.conf), this.deepClone(this.conf.get))
-    this.postConf = Object.assign(this.deepClone(this.conf), this.deepClone(this.conf.post))
-    this.putConf = Object.assign(this.deepClone(this.conf), this.deepClone(this.conf.put))
-    this.patchConf = Object.assign(this.deepClone(this.conf), this.deepClone(this.conf.patch))
-    this.deleteConf = Object.assign(this.deepClone(this.conf), this.deepClone(this.conf.delete))
-    this.headConf = Object.assign(this.deepClone(this.conf), this.deepClone(this.conf.head))
-    this.traceConf = Object.assign(this.deepClone(this.conf), this.deepClone(this.conf.trace))
-    this.connectConf = Object.assign(this.deepClone(this.conf), this.deepClone(this.conf.connect))
-    this.optionsConf = Object.assign(this.deepClone(this.conf), this.deepClone(this.conf.options))
+    }
 
     this.deepClone = (obj = {}) => {
       return JSON.parse(JSON.stringify(obj))
     }
 
+    this.objMerge = (target, custom) => {
+      return Object.assign(this.deepClone(target), custom)
+    }
+
+    this.conf = this.objMerge(this.conf, customConf)
+    this.getConf = this.objMerge(this.conf, this.conf.get)
+    this.postConf = this.objMerge(this.conf, this.conf.post)
+    this.putConf = this.objMerge(this.conf, this.conf.put)
+    this.patchConf = this.objMerge(this.conf, this.conf.patch)
+    this.deleteConf = this.objMerge(this.conf, this.conf.delete)
+    this.headConf = this.objMerge(this.conf, this.conf.head)
+    this.traceConf = this.objMerge(this.conf, this.conf.trace)
+    this.connectConf = this.objMerge(this.conf, this.conf.connect)
+    this.optionsConf = this.objMerge(this.conf, this.conf.options)
+
     // READ
     this.get = (
       url,
+      promise,
       data = null,
       upload = false,
-      conf = getConf
+      conf = {}
     ) => {
-      return this.custom('GET', url, data, upload, conf)
+      conf = this.objMerge(this.getConf, conf)
+      return this.custom('GET', url, promise, data, upload, conf)
     }
 
     // CREATE
     this.post = (
       url,
+      promise,
       data = null,
       upload = false,
-      conf = postConf
+      conf = {}
     ) => {
-      return this.custom('POST', url, data, upload, conf)
+      conf = this.objMerge(this.postConf, conf)
+      return this.custom('POST', url, promise, data, upload, conf)
     }
 
     // UPDATE / REPLACE
     this.put = (
       url,
+      promise,
       data = null,
       upload = false,
-      conf = putConf
+      conf = {}
     ) => {
-      return this.custom('PUT', url, data, upload, conf)
+      conf = this.objMerge(this.putConf, conf)
+      return this.custom('PUT', url, promise, data, upload, conf)
     }
 
     // UPDATE / MODIFY
     this.patch = (
       url,
+      promise,
       data = null,
       upload = false,
-      conf = patchConf
+      conf = {}
     ) => {
-      return this.custom('PATCH', url, data, upload, conf)
+      conf = this.objMerge(this.patchConf, conf)
+      return this.custom('PATCH', url, promise, data, upload, conf)
     }
 
     // DELETE
     this.delete = (
       url,
+      promise,
       data = null,
       upload = false,
-      conf = deleteConf
+      conf = {}
     ) => {
-      return this.custom('DELETE', url, data, upload, conf)
+      conf = this.objMerge(this.deleteConf, conf)
+      return this.custom('DELETE', url, promise, data, upload, conf)
     }
 
     // GET HEADERS ONLY / NO CONTENT
     this.head = (
       url,
+      promise,
       data = null,
       upload = false,
-      conf = headConf
+      conf = {}
     ) => {
-      return this.custom('HEAD', url, data, upload, conf)
+      conf = this.objMerge(this.headConf, conf)
+      return this.custom('HEAD', url, promise, data, upload, conf)
     }
 
     // GET ADDITIONS / CHANGES
     this.trace = (
       url,
+      promise,
       data = null,
       upload = false,
-      conf = traceConf
+      conf = {}
     ) => {
-      return this.custom('TRACE', url, data, upload, conf)
+      conf = this.objMerge(this.traceConf, conf)
+      return this.custom('TRACE', url, promise, data, upload, conf)
     }
 
     // CONVERT TO TCP / IP TUNNEL
     this.connect = (
       url,
+      promise,
       data = null,
       upload = false,
-      conf = connectConf
+      conf = {}
     ) => {
-      return this.custom('CONNECT', url, data, upload, conf)
+      conf = this.objMerge(this.connectConf, conf)
+      return this.custom('CONNECT', url, promise, data, upload, conf)
     }
 
     // PERMISSION
     this.options = (
       url,
+      promise,
       data = null,
       upload = false,
-      conf = optionsConf
+      conf = {}
     ) => {
-      return this.custom('OPTIONS', url, data, upload, conf)
+      conf = this.objMerge(this.optionsConf, conf)
+      return this.custom('OPTIONS', url, promise, data, upload, conf)
     }
 
     this.custom = (
       method,
       url,
+      promise,
       data = null,
       upload = false,
       conf = this.conf
     ) => {
-      let abort
-      let abortPromise = new Promise((resolve) => {
-        abort = resolve
-      })
-      let request = this.request(method, url, abortPromise, data, upload, conf)
-      request.abort = abort
-      return request
+      conf = this.objMerge(this.conf, conf)
+      return this.request(method, url, promise, data, upload, conf)
     }
 
     this.request = (
@@ -188,8 +208,12 @@ export default class Requester {
         }
       }
 
-      request = this.makeTale(request, abortPromise)
+      request = this.makeTale(request, conf)
       request = this.makeAbortable(request, abortPromise)
+      request.responseType = conf.responseType
+      request.transformResponse = (response) => {
+        return response
+      }
 
       return axios(request)
     }
