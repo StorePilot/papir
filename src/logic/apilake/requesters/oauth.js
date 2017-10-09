@@ -1,6 +1,6 @@
-import sign from './sign'
-import util from './util'
 import qs from 'qs'
+import sign from '../services/sign'
+import util from '../services/util'
 import Requester from '../services/requester'
 
 /**
@@ -19,6 +19,8 @@ export default class RequesterOauth extends Requester {
     }, customConf)
 
     super(customConf)
+
+    this.requester = 'oauth'
 
     this.request = (
       method,

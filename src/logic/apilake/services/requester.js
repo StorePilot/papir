@@ -9,6 +9,7 @@ export default class Requester {
 
   constructor (customConf = {}) {
 
+    this.requester = 'default'
     this.conf = {
       addDataToQuery: true,
       dualAuth: false,
