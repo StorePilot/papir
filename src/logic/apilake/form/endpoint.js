@@ -164,40 +164,36 @@ export default class Endpoint {
      * Url Resolver
      */
     shared.resolveUrl = (endpoint = endpoint, map = map, api = api, args = null) => {
-      let base = ''
+      let base = api !== null ? api.base : ''
+      // Remove last slash if any from base
+      if (base.length > 0 && base[(base.length - 1)] === '/') {
+        base = base.slice(0, -1)
+      }
       let path = endpoint
       // If mapping is set
       if (map !== null) {
         path = map.endpoint
-        base = api.base
-        // Remove last slash if any from base
-        if (base[(base.length - 1)] === '/') {
-          base = base.slice(0, -1)
-        }
         // Add slash to path if missing
-        if (path[0] !== '/') {
+        if (path.length > 0 && path[0] !== '/') {
           path = '/' + path
         }
-        // Resolve Optionals
-        if (path.indexOf('}') !== '-1') {
-          let optionals = path.split('}')
-          optionals.forEach(opt => {
-            let index = opt.indexOf('{')
-            if (index !== -1) {
-              let repl = opt.substring(index) + '}'
-              let prop = repl.replace('{', '').replace('}', '')
-              let val = ''
-              if (repl.indexOf('/') !== -1) {
-                prop = repl.replace('/', '')
-                val = '/'
-              }
-              if (typeof scope[prop] !== 'undefined') {
-                path = path.replace(repl, val + scope[prop].value)
-              }
-            }
-          })
-        }
       }
+      // Resolve Identifiers. Ex.: {id} or {/parentId} etc...
+      let identifiers = accessor.identifiers(path)
+      Object.keys(identifiers).forEach(key => {
+        let slash = identifiers[key].slash
+        let hook = identifiers[key].hook
+        // Resolve mapping
+        if (map !== null && typeof map.props !== 'undefined') {
+          key = typeof map.props[key] !== 'undefined' ? map.props[key] : key
+        }
+        // Replace hook with value from mapped prop
+        if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined') {
+          path = path.replace(hook, (slash ? '/' : '') + accessor[key].value)
+        } else if (accessor.reserved(key) && typeof accessor.invalids[key] !== 'undefined') {
+          path = path.replace(hook, (slash ? '/' : '') + accessor.invalids[key].value)
+        }
+      })
       let url = base + path
       // Add Query Arguments
       if (args !== null) {
@@ -219,7 +215,7 @@ export default class Endpoint {
     /**
      * Start Loader
      */
-    shared.startLoader = (loadSlug) => {
+    let startLoader = (loadSlug) => {
       accessor.loading = true
       return accessor.loaders.push(loadSlug)
     }
@@ -227,7 +223,7 @@ export default class Endpoint {
     /**
      * Stop Loader
      */
-    shared.stopLoader = (loadSlug) => {
+    let stopLoader = (loadSlug) => {
       let index = accessor.loaders.indexOf(loadSlug)
       if (index !== -1) {
         accessor.loaders = accessor.loaders.splice(index, 1)
@@ -254,44 +250,39 @@ export default class Endpoint {
     /**
      * Handle Mapping
      */
-    shared.handleMapping = (response) => {
+    shared.handleMapping = (response, key = null) => {
       return new Promise((resolve, reject) => {
         let data = response.data // Raw from server
         let headers = response.headers // In lowercase
         try {
           // Parse Data
-          let response = accessor.set(JSON.parse(data))
+          let response = accessor.set(JSON.parse(data), false, true, key)
           // Parse Headers
-          Object.keys(headers).forEach(key => {
-            if (
-              map !== null &&
-              typeof map.headers !== 'undefined' &&
-              typeof map.headers[key] !== 'undefined'
-            ) {
-              accessor.headers.mapped[map.headers[key]] = headers[key]
-            } else {
-              accessor.headers.unmapped[key] = headers[key]
-            }
-          })
+          if (key === null) {
+            Object.keys(headers).forEach(key => {
+              if (
+                map !== null &&
+                typeof map.headers !== 'undefined' &&
+                typeof map.headers[key] !== 'undefined'
+              ) {
+                accessor.headers.mapped[map.headers[key]] = headers[key]
+              } else {
+                accessor.headers.unmapped[key] = headers[key]
+              }
+            })
+          }
           resolve(response)
         } catch (error) {
-          // Not valid JSON
+          // Not valid JSON, go to next parser
         }
         // @todo - Add additional parsers. Ex. xml
         reject({
           error: 'Invalid Data',
-          message: 'Could not resolve properties from responded data',
+          message: 'Could not parse data from response',
           data: data,
           response: response
         })
       })
-    }
-
-    /**
-     * ReverseMapping @todo
-     */
-    shared.reverseMapping = (raw) => {
-      return raw
     }
 
     /**
@@ -322,10 +313,10 @@ export default class Endpoint {
     /**
      * Handle Request Success Response
      */
-    shared.handleSuccess = (response, replace = true) => {
+    shared.handleSuccess = (response, replace = true, key = null) => {
       return new Promise((resolve, reject) => {
         if (replace) {
-          shared.handleMapping(response).then(results => {
+          shared.handleMapping(response, key).then(results => {
             resolve(results)
           }).catch(error => {
             reject(error)
@@ -355,14 +346,14 @@ export default class Endpoint {
         promise = cancelHandler.cancellation
       }
       return new Promise((resolve, reject) => {
-        shared.startLoader(method)
+        startLoader(method)
         let api = controller !== null ? controller.apis[apiSlug] : api
         shared.requester[method.toLowerCase()](shared.resolveUrl(endpoint, map, api, args), promise, data, upload, conf).then(response => {
           accessor.raw = response
-          shared.stopLoader(method)
+          stopLoader(method)
           resolve(response)
         }).catch(error => {
-          shared.stopLoader(method)
+          stopLoader(method)
           reject(shared.handleError(error))
         })
       }).catch(error => {})
@@ -377,7 +368,7 @@ export default class Endpoint {
     accessor.fetch = (apiSlug = apiSlug, args = null, replace = true) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'fetch'
-        shared.startLoader(loadSlug)
+        startLoader(loadSlug)
         shared.makeRequest(
           loadSlug,
           'GET',
@@ -385,62 +376,92 @@ export default class Endpoint {
           args
         ).then(response => {
           shared.handleSuccess(response, replace).then(results => {
-            shared.stopLoader(loadSlug)
+            stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
-            shared.stopLoader(loadSlug)
+            stopLoader(loadSlug)
             reject(error)
           })
+        }).catch(error => {
+          stopLoader(loadSlug)
+          reject(error)
         })
       }).catch(error => {})
     }
-
+    
     /**
-     * Request Save @note - Related to Properties
+     * Request Save @note - Saves all changed Properties
+     * @apiSlug Use custom api by slug
+     * @args Custom arguments as object (key: value)
+     * @replace replace all properties in endpoint from response
+     * @create Attempt to create if save fails (Ex.: if no id provided to endpoint)
      */
-    accessor.save = (apiSlug = apiSlug, args = null, replace = true) => {
+    accessor.save = (apiSlug = apiSlug, args = null, replace = true, create = true) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'save'
-        shared.startLoader(loadSlug)
+        startLoader(loadSlug)
         shared.makeRequest(
           loadSlug,
           'PUT',
           apiSlug,
           args,
-          reverseMapping(accessor.changes())
+          accessor.removeIdentifiers(
+            accessor.reverseMapping(
+              accessor.changes()
+            )
+          )
         ).then(response => {
           shared.handleSuccess(response, replace).then(results => {
-            shared.stopLoader(loadSlug)
+            stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
-            shared.stopLoader(loadSlug)
+            stopLoader(loadSlug)
             reject(error)
           })
+        }).catch(error => {
+          // If could not save, try create
+          if (create) {
+            accessor.create(apiSlug, args, replace).then(response => {
+              stopLoader(loadSlug)
+              resolve(results)
+            }).catch(error => {
+              stopLoader(loadSlug)
+              reject(error)
+            })
+          } else {
+            stopLoader(loadSlug)
+            reject(error)
+          }
         })
       }).catch(error => {})
     }
 
     /**
-     * Request Create @note - Related to Properties
+     * Request Create @note - Saves all Properties
      */
     accessor.create = (apiSlug = apiSlug, args = null, replace = true) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'create'
-        shared.startLoader(loadSlug)
+        startLoader(loadSlug)
         shared.makeRequest(
           loadSlug,
           'POST',
           apiSlug,
           args,
-          reverseMapping(props())
+          accessor.removeIdentifiers(
+            accessor.reverseMapping()
+          )
         ).then(response => {
           shared.handleSuccess(response, replace).then(results => {
-            shared.stopLoader(loadSlug)
+            stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
-            shared.stopLoader(loadSlug)
+            stopLoader(loadSlug)
             reject(error)
           })
+        }).catch(error => {
+          stopLoader(loadSlug)
+          reject(error)
         })
       }).catch(error => {})
     }
@@ -451,7 +472,7 @@ export default class Endpoint {
     accessor.remove = (apiSlug = apiSlug, args = null, replace = true) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'remove'
-        shared.startLoader(loadSlug)
+        startLoader(loadSlug)
         shared.makeRequest(
           loadSlug,
           'DELETE',
@@ -459,12 +480,15 @@ export default class Endpoint {
           args
         ).then(response => {
           shared.handleSuccess(response, replace).then(results => {
-            shared.stopLoader(loadSlug)
+            stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
-            shared.stopLoader(loadSlug)
+            stopLoader(loadSlug)
             reject(error)
           })
+        }).catch(error => {
+          stopLoader(loadSlug)
+          reject(error)
         })
       }).catch(error => {})
     }
@@ -475,7 +499,7 @@ export default class Endpoint {
     accessor.upload = (file, apiSlug = apiSlug, args = null, replace = true) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'upload'
-        shared.startLoader(loadSlug)
+        startLoader(loadSlug)
         shared.makeRequest(
           loadSlug,
           'PUT',
@@ -485,12 +509,15 @@ export default class Endpoint {
           true
         ).then(response => {
           shared.handleSuccess(response, replace).then(results => {
-            shared.stopLoader(loadSlug)
+            stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
-            shared.stopLoader(loadSlug)
+            stopLoader(loadSlug)
             reject(error)
           })
+        }).catch(error => {
+          stopLoader(loadSlug)
+          reject(error)
         })
       }).catch(error => {})
     }
@@ -705,35 +732,39 @@ export default class Endpoint {
     /**
      * Set / Update Properties
      */
-    accessor.set = (data, change = true, raw = false) => {
+    accessor.set = (data, change = true, raw = false, updateKey = null) => {
       Object.keys(data).forEach(key => {
         let hook = accessor
         let prop = key
         if (!raw) {
-          if (!accessor.reserved(prop)) {
+          if (!accessor.reserved(prop) && (updateKey === null || prop === updateKey)) {
             hook[prop].value = data[key].value
             hook[prop].changed(change)
           }
           if (key === 'invalids') {
             Object.keys(data[key]).forEach(prop => {
-              hook[key][prop].value = data[key][prop].value
-              hook[key][prop].changed(change)
+              if (updateKey === null || prop === updateKey) {
+                hook[key][prop].value = data[key][prop].value
+                hook[key][prop].changed(change)
+              }
             })
           }
         } else {
           prop = typeof map.props[key] !== 'undefined' ? map.props[key] : key
-          if (accessor.reserved(prop)) {
-            hook = accessor.invalids
-          }
-          if (typeof hook[prop] !== 'undefined') {
-            hook[prop].value = data[key]
-            hook[prop].changed(change)
-          } else {
-            hook[prop] = new Prop(shared, prop, data[key])
+          if (updateKey === null || prop === updateKey) {
+            if (accessor.reserved(prop)) {
+              hook = accessor.invalids
+            }
+            if (typeof hook[prop] !== 'undefined') {
+              hook[prop].value = data[key]
+              hook[prop].changed(change)
+            } else {
+              hook[prop] = new Prop(shared, prop, data[key])
+            }
           }
         }
       })
-      return accessor
+      return (updateKey === null ? accessor : (accessor.reserved(updateKey) ? accessor.invalid[updateKey] : accessor[updateKey]))
     }
 
     /**
@@ -839,6 +870,76 @@ export default class Endpoint {
       let clone = new Endpoint(endpoint, controller, apiSlug, predefined)
       clone.raw = JSON.parse(JSON.stringify(accessor.raw))
       return clone.set(accessor)
+    }
+
+    /**
+     * ReverseMapping
+     */
+    accessor.reverseMapping = (props = accessor.props(), reference = false) => {
+      let reverse = {}
+      try {
+        // Clone props
+        if (reference) {
+          Object.keys(props).forEach(key => {
+            reverse[key] = JSON.parse(JSON.stringify(props[key].value))
+          })
+        } else {
+          reverse = JSON.parse(JSON.stringify(props))
+        }
+        // Replace keys in props with mappings
+        Object.keys(map.props).forEach(key => {
+          if (typeof reverse[map.props[key]] !== 'undefined') {
+            // @note - If keys in props Collides with mapping, its overwritten
+            reverse[key] = reverse[map.props[key]]
+            delete reverse[map.props[key]]
+          }
+        })
+      } catch (error) {
+        console.error(error)
+      }
+      return reverse
+    }
+
+    /**
+     * Remove Identifiers before making request. Takes raw only, not references
+     */
+    accessor.removeIdentifiers = (props, endpoint = endpoint, map = map) => {
+      let path = map !== null ? map.endpoint : endpoint
+      let identifiers = accessor.identifiers(path)
+      Object.keys(props).forEach(key => {
+        if (typeof identifiers[key] !== 'undefined') {
+          delete props[key]
+        }
+      })
+      return props
+    }
+
+    /**
+     * Identifiers - Resolve Identifiers. Ex.: {id} or {/parentId} etc. in path
+     */
+    accessor.identifiers = (path) => {
+      let identifiers = {}
+      // Resolve Identifiers. Ex.: {id} or {/parentId} etc...
+      if (path.indexOf('}') !== '-1') {
+        let optionals = path.split('}')
+        optionals.forEach(opt => {
+          let index = opt.indexOf('{')
+          if (index !== -1) {
+            let hook = opt.substring(index) + '}'
+            let prop = hook.replace('{', '').replace('}', '')
+            let slash = false
+            if (hook.indexOf('/') !== -1) {
+              prop = hook.replace('/', '')
+              slash = true
+            }
+            identifiers[prop] = {
+              slash: slash,
+              hook: hook
+            }
+          }
+        })
+      }
+      return identifiers
     }
 
   }

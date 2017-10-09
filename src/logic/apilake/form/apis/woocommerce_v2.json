@@ -46,9 +46,10 @@
     "connect": {},
     "options": {}
   },
-  "@note": "mappings.x.props.key = from, mappings.x.props.key.value = to",
+  "@note": "mappings.x.props.key = from (primary), mappings.x.props.key.value = to (map)",
   "mappings": {
     "product": {
+      "@note": "{/id} is hooked to primary property and not map",
       "endpoint": "/products{/id}",
       "query_arguments": {
         "search": "search"
@@ -61,6 +62,7 @@
       }
     },
     "product_variation": {
+      "@note": "{/id} is hooked to primary property and not map",
       "endpoint": "/products/{parent}/variations{/id}",
       "query_arguments": {
         "search": "search"
