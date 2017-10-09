@@ -14,11 +14,50 @@ export default class Endpoint {
     let accessor = this
 
     /**
+     * Public / Reserved Variables
+     */
+
+    /**
+     * Get last fetched raw value
+     */
+    accessor.raw = null
+
+    /**
      * Shared Variables
      */
     let shared = {
       requester: Requester = controller,
-      accessor: accessor
+      accessor: accessor,
+      reserved: [
+        'loading',
+        'loaders',
+        // Property Requesters
+        'fetch',
+        'custom',
+        'save',
+        'create',
+        'clear',
+        'upload',
+        'remove',
+        // Custom Requesters
+        'get',
+        'post',
+        'put',
+        'delete',
+        'head',
+        'trace',
+        'connect',
+        'options',
+        // Property Methods
+        'set',
+        'clone',
+        'changes',
+        'headers',
+        'invalids',
+        'props',
+        'raw',
+        'reserved'
+      ]
     }
     
     /**
@@ -33,33 +72,6 @@ export default class Endpoint {
       remove: null,
       upload: null
     }
-    let reserved = [
-      'loading',
-      'loaders',
-      // Property Requesters
-      'fetch',
-      'custom',
-      'save',
-      'create',
-      'clear',
-      'upload',
-      'remove',
-      // Custom Requesters
-      'get',
-      'post',
-      'put',
-      'delete',
-      'head',
-      'trace',
-      'connect',
-      'options',
-      // Property Methods
-      'set',
-      'clone',
-      'changes',
-      'headers',
-      'invalids'
-    ]
 
     /**
      * Public / Reserved Variable Names
@@ -109,38 +121,13 @@ export default class Endpoint {
      */
 
     /**
-     * Get last fetched raw value @todo
-     */
-    shared.raw = () => {
-      return
-    }
-
-    /**
-     * Get all props including invalids as
-     * opt raw = object.prop = value @todo
-     * opt !raw = ref to prop
-     */
-    shared.props = (raw = false) => {
-      return
-    }
-
-    /**
-     * Get all props which is changed as
-     * opt raw = object.prop = value @todo
-     * opt !raw = ref to prop
-     */
-    shared.changes = (raw = false) => {
-      return
-    }
-
-    /**
      * Build mapped / predefined properties
      */
     shared.buildProps = (map = map, predefined = predefined) => {
       if (map !== null && typeof map.props !== 'undefined') {
         try {
           Object.keys(map.props).forEach(key => {
-            if (reserved.indexOf(key) === -1) {
+            if (!accessor.reserved(key)) {
               accessor[map.props[key]] = new Prop(shared, map.props[key], null)
             } else if (key === 'invalids') {
               accessor.invalids[map.props[key]] = new Prop(shared, map.props[key], null)
@@ -154,7 +141,7 @@ export default class Endpoint {
       }
       try {
         Object.keys(predefined).forEach(key => {
-          if (reserved.indexOf(key) === -1 && typeof accessor[key] === 'undefined') {
+          if (!accessor.reserved(key) && typeof accessor[key] === 'undefined') {
             accessor[key] = new Prop(shared, key, predefined[key])
           } else if (key === 'invalids' && typeof accessor.invalids[key] === 'undefined') {
             accessor.invalids[key] = new Prop(shared, key, predefined[key])
@@ -371,6 +358,7 @@ export default class Endpoint {
         shared.startLoader(method)
         let api = controller !== null ? controller.apis[apiSlug] : api
         shared.requester[method.toLowerCase()](shared.resolveUrl(endpoint, map, api, args), promise, data, upload, conf).then(response => {
+          accessor.raw = response
           shared.stopLoader(method)
           resolve(response)
         }).catch(error => {
@@ -419,7 +407,7 @@ export default class Endpoint {
           'PUT',
           apiSlug,
           args,
-          reverseMapping(changes())
+          reverseMapping(accessor.changes())
         ).then(response => {
           shared.handleSuccess(response, replace).then(results => {
             shared.stopLoader(loadSlug)
@@ -722,7 +710,7 @@ export default class Endpoint {
         let hook = accessor
         let prop = key
         if (!raw) {
-          if (!reserved.indexOf(prop)) {
+          if (!accessor.reserved(prop)) {
             hook[prop].value = data[key].value
             hook[prop].changed(change)
           }
@@ -734,7 +722,7 @@ export default class Endpoint {
           }
         } else {
           prop = typeof map.props[key] !== 'undefined' ? map.props[key] : key
-          if (reserved.indexOf(prop)) {
+          if (accessor.reserved(prop)) {
             hook = accessor.invalids
           }
           if (typeof hook[prop] !== 'undefined') {
@@ -763,7 +751,7 @@ export default class Endpoint {
       accessor.loaders = []
       // Reset properties
       Object.keys(accessor).forEach(key => {
-        if (reserved.indexOf(key) === -1 && keep.indexOf(key) === -1) {
+        if (!accessor.reserved(key) && keep.indexOf(key) === -1) {
           accessor[key].value = null
           accessor[key].changed(change)
         }
@@ -771,6 +759,86 @@ export default class Endpoint {
       // Empty invalids
       accessor.invalids = {}
       return accessor
+    }
+
+    /**
+     * Get all props including invalids as object without reserved methods / variables
+     * reference === true returns reference. Else only value is returned
+     */
+    accessor.props = (reference = false) => {
+      let obj = {}
+      if (reference) {
+        Object.keys(accessor).forEach(key => {
+          if (!accessor.reserved(key)) {
+            obj[key] = accessor[key]
+          }
+        })
+        Object.keys(accessor.invalids).forEach(key => {
+          obj[key] = accessor[key]
+        })
+      } else {
+        Object.keys(accessor).forEach(key => {
+          if (!accessor.reserved(key)) {
+            obj[key] = accessor[key].value
+          }
+        })
+        Object.keys(accessor.invalids).forEach(key => {
+          obj[key] = accessor[key].value
+        })
+      }
+      return obj
+    }
+
+    /**
+     * Get all changed props including invalids as object without reserved methods / variables
+     * reference === true returns reference. Else only value is returned
+     */
+    accessor.changes = (reference = false) => {
+      let obj = {}
+      if (reference) {
+        Object.keys(accessor).forEach(key => {
+          if (!accessor.reserved(key)) {
+            if (accessor[key].changed()) {
+              obj[key] = accessor[key]
+            }
+          }
+        })
+        Object.keys(accessor.invalids).forEach(key => {
+          if (accessor[key].changed()) {
+            obj[key] = accessor[key]
+          }
+        })
+      } else {
+        Object.keys(accessor).forEach(key => {
+          if (!accessor.reserved(key)) {
+            if (accessor[key].changed()) {
+              obj[key] = accessor[key].value
+            }
+          }
+        })
+        Object.keys(accessor.invalids).forEach(key => {
+          if (accessor[key].changed()) {
+            obj[key] = accessor[key].value
+          }
+        })
+      }
+      return obj
+    }
+
+    /**
+     * Check if property key is reserved
+     */
+    accessor.reserved = (key) => {
+      return shared.reserved.indexOf(key) !== -1
+    }
+
+    /**
+     * Clone Endpoint
+     */
+    accessor.clone = (changes = true) => {
+      let clone = new Endpoint(endpoint, controller, apiSlug, predefined)
+      clone.raw = JSON.parse(JSON.stringify(accessor.raw))
+      return clone.set(accessor)
     }
 
   }
