@@ -2,7 +2,7 @@
  * Prop
  */
 export default class Prop {
-  constructor (shared, key, value) {
+  constructor (parent, key, value = null) {
 
     /**
      * Public Scope
@@ -77,7 +77,7 @@ export default class Prop {
       return new Promise((resolve, reject) => {
         let loadSlug = 'save'
         startLoader(loadSlug)
-        shared.makeRequest(
+        parent.shared.makeRequest(
           loadSlug,
           'PUT',
           apiSlug,
@@ -86,7 +86,7 @@ export default class Prop {
             accessor.reverseMapping(obj)
           )
         ).then(response => {
-          shared.handleSuccess(response, replace, key).then(results => {
+          parent.shared.handleSuccess(response, replace, key).then(results => {
             stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
@@ -96,7 +96,7 @@ export default class Prop {
         }).catch(error => {
           // If could not save, try create and update all properties
           if (create) {
-            shared.accessor.create(apiSlug, args, replace).then(() => {
+            parent.shared.accessor.create(apiSlug, args, replace).then(() => {
               stopLoader(loadSlug)
               resolve(accessor)
             }).catch(error => {
@@ -115,13 +115,13 @@ export default class Prop {
       return new Promise((resolve, reject) => {
         let loadSlug = 'fetch'
         startLoader(loadSlug)
-        shared.makeRequest(
+        parent.shared.makeRequest(
           loadSlug,
           'GET',
           apiSlug,
           args
         ).then(response => {
-          shared.handleSuccess(response, replace, key).then(results => {
+          parent.shared.handleSuccess(response, replace, key).then(results => {
             stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
@@ -136,7 +136,7 @@ export default class Prop {
     }
 
     this.clone = (clone = accessor.value) => {
-      let clone = new Prop(shared, key, value)
+      let clone = new Prop(parent, key, value)
       try {
         clone.value = JSON.parse(JSON.stringify(accessor.value))
       } catch (error) {

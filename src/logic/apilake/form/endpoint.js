@@ -25,7 +25,7 @@ export default class Endpoint {
     /**
      * Shared Variables
      */
-    let shared = {
+    accessor.shared = {
       requester: Requester = controller,
       accessor: accessor,
       reserved: [
@@ -56,7 +56,11 @@ export default class Endpoint {
         'invalids',
         'props',
         'raw',
-        'reserved'
+        'reserved',
+        'shared',
+        'identifiers',
+        'removeIdentifiers',
+        'reverseMapping'
       ]
     }
     
@@ -107,9 +111,9 @@ export default class Endpoint {
       if (typeof controller.apis !== 'undefined') {
         apiSlug = controller.default
         api = controller.apis[apiSlug]
-        shared.requester = api.requester
+        accessor.shared.requester = api.requester
         map = resolveMap(endpoint, api)
-        shared.buildProps(map, predefined)
+        accessor.shared.buildProps(map, predefined)
       } else {
         controller = null
       }
@@ -123,14 +127,14 @@ export default class Endpoint {
     /**
      * Build mapped / predefined properties
      */
-    shared.buildProps = (map = map, predefined = predefined) => {
+    accessor.shared.buildProps = (map = map, predefined = predefined) => {
       if (map !== null && typeof map.props !== 'undefined') {
         try {
           Object.keys(map.props).forEach(key => {
             if (!accessor.reserved(key)) {
-              accessor[map.props[key]] = new Prop(shared, map.props[key], null)
+              accessor[map.props[key]] = new Prop(accessor, map.props[key], null)
             } else if (key === 'invalids') {
-              accessor.invalids[map.props[key]] = new Prop(shared, map.props[key], null)
+              accessor.invalids[map.props[key]] = new Prop(accessor, map.props[key], null)
             }
           })
         }
@@ -142,9 +146,9 @@ export default class Endpoint {
       try {
         Object.keys(predefined).forEach(key => {
           if (!accessor.reserved(key) && typeof accessor[key] === 'undefined') {
-            accessor[key] = new Prop(shared, key, predefined[key])
+            accessor[key] = new Prop(accessor, key, predefined[key])
           } else if (key === 'invalids' && typeof accessor.invalids[key] === 'undefined') {
-            accessor.invalids[key] = new Prop(shared, key, predefined[key])
+            accessor.invalids[key] = new Prop(accessor, key, predefined[key])
           } else if (typeof accessor[key] !== 'undefined') {
             if (key === 'invalids') {
               accessor.invalids[key].value = predefined[key]
@@ -163,7 +167,7 @@ export default class Endpoint {
     /**
      * Url Resolver
      */
-    shared.resolveUrl = (endpoint = endpoint, map = map, api = api, args = null) => {
+    accessor.shared.resolveUrl = (endpoint = endpoint, map = map, api = api, args = null) => {
       let base = api !== null ? api.base : ''
       // Remove last slash if any from base
       if (base.length > 0 && base[(base.length - 1)] === '/') {
@@ -235,7 +239,7 @@ export default class Endpoint {
     /**
      * Handle Cancelation of Running Requests
      */
-    shared.handleCancellation = (cancellation) => {
+    accessor.shared.handleCancellation = (cancellation) => {
       if (cancellation !== null) {
         cancellation()
       }
@@ -250,7 +254,7 @@ export default class Endpoint {
     /**
      * Handle Mapping
      */
-    shared.handleMapping = (response, key = null) => {
+    accessor.shared.handleMapping = (response, key = null) => {
       return new Promise((resolve, reject) => {
         let data = response.data // Raw from server
         let headers = response.headers // In lowercase
@@ -288,7 +292,7 @@ export default class Endpoint {
     /**
      * Handle Request Error Catching
      */
-    shared.handleError = (error) => {
+    accessor.shared.handleError = (error) => {
       if (axios.isCancel(error)) {
         // Manually cancelled
       } else if (error.response) {
@@ -313,10 +317,10 @@ export default class Endpoint {
     /**
      * Handle Request Success Response
      */
-    shared.handleSuccess = (response, replace = true, key = null) => {
+    accessor.shared.handleSuccess = (response, replace = true, key = null) => {
       return new Promise((resolve, reject) => {
         if (replace) {
-          shared.handleMapping(response, key).then(results => {
+          accessor.shared.handleMapping(response, key).then(results => {
             resolve(results)
           }).catch(error => {
             reject(error)
@@ -330,7 +334,7 @@ export default class Endpoint {
     /**
      * Make Any Request
      */
-    shared.makeRequest = (
+    accessor.shared.makeRequest = (
       canceler,
       method,
       apiSlug = apiSlug,
@@ -341,20 +345,20 @@ export default class Endpoint {
       promise = new Promise()
     ) => {
       if (canceler !== false) {
-        let cancelHandler = shared.handleCancellation(cancelers[canceler])
+        let cancelHandler = accessor.shared.handleCancellation(cancelers[canceler])
         cancelers[canceler] = cancelHandler.cancellation
         promise = cancelHandler.cancellation
       }
       return new Promise((resolve, reject) => {
         startLoader(method)
         let api = controller !== null ? controller.apis[apiSlug] : api
-        shared.requester[method.toLowerCase()](shared.resolveUrl(endpoint, map, api, args), promise, data, upload, conf).then(response => {
+        accessor.shared.requester[method.toLowerCase()](accessor.shared.resolveUrl(endpoint, map, api, args), promise, data, upload, conf).then(response => {
           accessor.raw = response
           stopLoader(method)
           resolve(response)
         }).catch(error => {
           stopLoader(method)
-          reject(shared.handleError(error))
+          reject(accessor.shared.handleError(error))
         })
       }).catch(error => {})
     }
@@ -369,13 +373,13 @@ export default class Endpoint {
       return new Promise((resolve, reject) => {
         let loadSlug = 'fetch'
         startLoader(loadSlug)
-        shared.makeRequest(
+        accessor.shared.makeRequest(
           loadSlug,
           'GET',
           apiSlug,
           args
         ).then(response => {
-          shared.handleSuccess(response, replace).then(results => {
+          accessor.shared.handleSuccess(response, replace).then(results => {
             stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
@@ -400,7 +404,7 @@ export default class Endpoint {
       return new Promise((resolve, reject) => {
         let loadSlug = 'save'
         startLoader(loadSlug)
-        shared.makeRequest(
+        accessor.shared.makeRequest(
           loadSlug,
           'PUT',
           apiSlug,
@@ -411,7 +415,7 @@ export default class Endpoint {
             )
           )
         ).then(response => {
-          shared.handleSuccess(response, replace).then(results => {
+          accessor.shared.handleSuccess(response, replace).then(results => {
             stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
@@ -443,7 +447,7 @@ export default class Endpoint {
       return new Promise((resolve, reject) => {
         let loadSlug = 'create'
         startLoader(loadSlug)
-        shared.makeRequest(
+        accessor.shared.makeRequest(
           loadSlug,
           'POST',
           apiSlug,
@@ -452,7 +456,7 @@ export default class Endpoint {
             accessor.reverseMapping()
           )
         ).then(response => {
-          shared.handleSuccess(response, replace).then(results => {
+          accessor.shared.handleSuccess(response, replace).then(results => {
             stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
@@ -473,13 +477,13 @@ export default class Endpoint {
       return new Promise((resolve, reject) => {
         let loadSlug = 'remove'
         startLoader(loadSlug)
-        shared.makeRequest(
+        accessor.shared.makeRequest(
           loadSlug,
           'DELETE',
           apiSlug,
           args
         ).then(response => {
-          shared.handleSuccess(response, replace).then(results => {
+          accessor.shared.handleSuccess(response, replace).then(results => {
             stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
@@ -500,7 +504,7 @@ export default class Endpoint {
       return new Promise((resolve, reject) => {
         let loadSlug = 'upload'
         startLoader(loadSlug)
-        shared.makeRequest(
+        accessor.shared.makeRequest(
           loadSlug,
           'PUT',
           apiSlug,
@@ -508,7 +512,7 @@ export default class Endpoint {
           file,
           true
         ).then(response => {
-          shared.handleSuccess(response, replace).then(results => {
+          accessor.shared.handleSuccess(response, replace).then(results => {
             stopLoader(loadSlug)
             resolve(results)
           }).catch(error => {
@@ -533,7 +537,7 @@ export default class Endpoint {
       promise = new Promise(),
       conf = {}
     ) => {
-      return shared.makeRequest(
+      return accessor.shared.makeRequest(
         false,
         'GET',
         apiSlug,
@@ -556,7 +560,7 @@ export default class Endpoint {
       promise = new Promise(),
       conf = {}
     ) => {
-      return shared.makeRequest(
+      return accessor.shared.makeRequest(
         false,
         'POST',
         apiSlug,
@@ -579,7 +583,7 @@ export default class Endpoint {
       promise = new Promise(),
       conf = {}
     ) => {
-      return shared.makeRequest(
+      return accessor.shared.makeRequest(
         false,
         'PUT',
         apiSlug,
@@ -602,7 +606,7 @@ export default class Endpoint {
       promise = new Promise(),
       conf = {}
     ) => {
-      return shared.makeRequest(
+      return accessor.shared.makeRequest(
         false,
         'PATCH',
         apiSlug,
@@ -625,7 +629,7 @@ export default class Endpoint {
       promise = new Promise(),
       conf = {}
     ) => {
-      return shared.makeRequest(
+      return accessor.shared.makeRequest(
         false,
         'DELETE',
         apiSlug,
@@ -648,7 +652,7 @@ export default class Endpoint {
       promise = new Promise(),
       conf = {}
     ) => {
-      return shared.makeRequest(
+      return accessor.shared.makeRequest(
         false,
         'HEAD',
         apiSlug,
@@ -671,7 +675,7 @@ export default class Endpoint {
       promise = new Promise(),
       conf = {}
     ) => {
-      return shared.makeRequest(
+      return accessor.shared.makeRequest(
         false,
         'TRACE',
         apiSlug,
@@ -694,7 +698,7 @@ export default class Endpoint {
       promise = new Promise(),
       conf = {}
     ) => {
-      return shared.makeRequest(
+      return accessor.shared.makeRequest(
         false,
         'CONNECT',
         apiSlug,
@@ -717,7 +721,7 @@ export default class Endpoint {
       promise = new Promise(),
       conf = {}
     ) => {
-      return shared.makeRequest(
+      return accessor.shared.makeRequest(
         false,
         'OPTIONS',
         apiSlug,
@@ -759,7 +763,7 @@ export default class Endpoint {
               hook[prop].value = data[key]
               hook[prop].changed(change)
             } else {
-              hook[prop] = new Prop(shared, prop, data[key])
+              hook[prop] = new Prop(accessor, prop, data[key])
             }
           }
         }
@@ -860,7 +864,7 @@ export default class Endpoint {
      * Check if property key is reserved
      */
     accessor.reserved = (key) => {
-      return shared.reserved.indexOf(key) !== -1
+      return accessor.shared.reserved.indexOf(key) !== -1
     }
 
     /**
