@@ -5,7 +5,7 @@ import Requester from './requester'
 /**
  * Controller
  */
-class Controller {
+export class Controller {
 
   constructor () {
 

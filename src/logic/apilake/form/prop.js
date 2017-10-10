@@ -1,8 +1,10 @@
+import Endpoint from './endpoint'
+
 /**
  * Prop
  */
 export default class Prop {
-  constructor (parent, key, value = null) {
+  constructor (parent: Endpoint, key: string, value: any = null) {
 
     /**
      * Public Scope
@@ -13,6 +15,7 @@ export default class Prop {
      * Public Variables
      */
     accessor.value = JSON.parse(JSON.stringify(value))
+    accessor.key = key
     accessor.loading = false
     accessor.loaders = 0
 

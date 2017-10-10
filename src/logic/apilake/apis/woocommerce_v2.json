@@ -50,26 +50,58 @@
   "@note": "mappings.x.props.key = from (primary), mappings.x.props.key.value = to (map)",
   "mappings": {
     "product": {
+      "identifier": "id",
       "@note": "{/id} is hooked to primary property and not map",
       "endpoint": "/products{/id}",
-      "query_arguments": {
+      "args": {
         "search": "search"
       },
       "props": {
         "id": "id"
+      }
+    },
+    "products": {
+      "@note": "{batch} is hooked to primary property and not map",
+      "multiple": true,
+      "child": "product",
+      "endpoint": "/products/{batch}",
+      "args": {
+        "limit": 100,
+        "search": "search"
+      },
+      "batch": {
+        "save": "update",
+        "create": "create",
+        "delete": "delete"
       },
       "headers": {
-        "x-wp-xxx-page": "page"
+        "x-wp-total": "total",
+        "x-wp-totalpages": "pages"
       }
     },
     "product_variation": {
+      "identifier": "id",
       "@note": "{/id} is hooked to primary property and not map",
       "endpoint": "/products/{parent}/variations{/id}",
-      "query_arguments": {
+      "args": {
         "search": "search"
       },
       "props": {
         "id": "id"
+      }
+    },
+    "product_variations": {
+      "@note": "{/id} is hooked to primary property and not map",
+      "multiple": true,
+      "child": "product_variation",
+      "endpoint": "/products/{parent}/variations/{batch}",
+      "args": {
+        "search": "search"
+      },
+      "batch": {
+        "save": "update",
+        "create": "create",
+        "delete": "delete"
       }
     }
   }
