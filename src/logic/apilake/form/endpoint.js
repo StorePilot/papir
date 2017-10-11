@@ -62,16 +62,18 @@ export default class Endpoint {
         'set',
         'clone',
         'changes',
-        'headers',
-        'invalids',
         'props',
-        'raw',
-        'reserved',
         'shared',
         'identifier',
         'identifiers',
         'removeIdentifiers',
-        'reverseMapping'
+        'reverseMapping',
+        // Accessor Variables
+        'children',
+        'raw',
+        'headers',
+        'invalids',
+        'reserved'
       ]
     }
     
@@ -295,6 +297,7 @@ export default class Endpoint {
             // Parse Data
             let response = accessor.set(parsed, false, true, key)
           } else if (batch && map !== null) {
+            // Exchange all without delete
             parsed.forEach(method => {
               if (
                 (typeof map.batch !== 'undefined' && typeof map.batch.delete !== 'undefined' && method !== map.batch.delete) ||
@@ -303,7 +306,12 @@ export default class Endpoint {
                 method.forEach(child => {
                   let endpoint = new Endpoint(map.child, controller, apiSlug, child)
                   accessor.shared.exchange(endpoint)
-                }) // @todo - create exchange
+                })
+              } else {
+                method.forEach(child => {
+                  let endpoint = new Endpoint(map.child, controller, apiSlug, child)
+                  accessor.shared.exchange(endpoint, false, true)
+                })
               }
             })
           } else if (multiple && map !== null) {
@@ -385,6 +393,411 @@ export default class Endpoint {
           resolve(response)
         }
       })
+    }
+
+    /**
+     * Exchange endpoint in accessor.children with match from input
+     * @returns Endpoint (exchanged) | Endpoint.children (On Remove) | false (If no match found)
+     */
+    accessor.shared.exchange = (endpoint: Endpoint, reliable = false, remove = false, map = accessor.shared.map) => {
+      let exchange
+      if (endpoint.identifier !== null) {
+        exchange = accessor.children.find(child => {
+          return child.identifier !== null && child.identifier.value === endpoint.identifier.value
+        })
+        if (typeof exchange === 'undefined') {
+          exchange = smartFind(endpoint)
+        }
+      } else {
+        exchange = smartFind(endpoint)
+      }
+      if (typeof exchange !== 'undefined' && !remove) {
+        // Handle Exchange
+        return exchange.set(endpoint, false)
+      } else if (!remove) {
+        // If no match found, push to children
+        return false
+      } else if (typeof exchange !== 'undefined') {
+        // Handle Remove
+        let index = accessor.children.indexOf(exchange)
+        if (index !== -1 ) {
+          accessor.children.splice(index, 1)
+        }
+        return accessor.children
+      } else {
+        return false
+      }
+      // @note - This could be more heavy and alot slower
+      let smartFind = (endpoint: Endpoint) => {
+        // Reliable.
+        // Check for Creation Identifier match.
+        let exchange = resolveCreationIdentifier(endpoint)
+        // Reliable.
+        // Incoming needs all existing props (No differ).
+        // Existing needs all incoming props (No differ).
+        if (typeof exchange === 'undefined') {
+          exchange = findExactMatch(endpoint)
+        }
+        // Not reliable, but could be usable anyways
+        if (!reliable && typeof exchange === 'undefined') {
+          // @todo - Add resolveByIndex (find response index by request index) method and make it optional in config
+          // Unreliable.
+          // Incoming needs all existing props (No differ).
+          // Existing could have more props.
+          if (typeof exchange === 'undefined') {
+            exchange = findExactExistingMatch(endpoint)
+          }
+          // Unreliable.
+          // Existing needs all incoming props (No differ).
+          // Incoming could have more props.
+          // Extra incoming props are added to existing props.
+          if (typeof exchange === 'undefined') {
+            exchange = findExactIncomingMatch(endpoint)
+          }
+          // Unreliable.
+          // Incoming needs all unchanged props (No differ).
+          // Existing could have more props.
+          // Incoming could have more props.
+          // Existing changes is replaced by incoming changes (Also differed).
+          // Extra incoming props are added to existing props.
+          if (typeof exchange === 'undefined') {
+            exchange = findExactUnchangedMatch(endpoint)
+          }
+          // Unreliable.
+          // Incoming needs all changed props (No differ).
+          // Existing could have more props.
+          // Incoming could have more props.
+          // Existing props is replaced by incoming props (Also differed) if not changed.
+          // Extra incoming props are added to existing props.
+          if (typeof exchange === 'undefined') {
+            exchange = findExactChangedMatch(endpoint)
+          }
+          // Unreliable.
+          // Incoming props which matches existing (No differ).
+          // Existing could have more props.
+          // Incoming could have more props.
+          // Extra incoming props are added to existing props.
+          if (typeof exchange === 'undefined') {
+            exchange = findIncomingMatch(endpoint)
+          }
+          // Unreliable.
+          // Incoming props which matches unchanged existing (No differ).
+          // Existing could have more props.
+          // Incoming could have more props.
+          // Existing changes is replaced by incoming changes (Also differed).
+          // Extra incoming props are added to existing props.
+          if (typeof exchange === 'undefined') {
+            exchange = findUnchangedMatch(endpoint)
+          }
+          // Unreliable.
+          // Incoming props which matches changed existing (No differ).
+          // Existing could have more props.
+          // Incoming could have more props.
+          // Existing props is replaced by incoming props (Also differed) if not changed.
+          // Extra incoming props are added to existing props.
+          if (typeof exchange === 'undefined') {
+            exchange = findChangedMatch(endpoint)
+          }
+        }
+        return exchange
+      }
+      // Resolve Creation Identifier
+      let resolveCreationIdentifier = (endpoint: Endpoint) => {
+        if (map !== null && typeof map.creationIdentifier !== 'undefined') {
+          let identifier = map.creationIdentifier
+          let split = identifier.replace('=', '|=split=|').split('|=split=|')
+          let prop = null
+          // Resolve mapping
+          if (typeof map.props !== 'undefined' && typeof map.props[split[0]] !== 'undefined') {
+            split[0] = map.props[split[0]]
+          }
+          // Check if property exist and make reference to prop
+          if (!endpoint.reserved(split[0]) && typeof endpoint[split[0]] !== 'undefined') {
+            prop = endpoint[split[0]]
+          } else if (endpoint.reserved(split[0]) && typeof endpoint.invalids[split[0]] !== 'undefined') {
+            prop = endpoint.invalids[split[0]]
+          }
+          // If Creation Identifier is set, try to resolve
+          if (prop !== null) {
+            return accessor.children.find(child => {
+              let match = false
+              let childProp = null
+              // Check if property exist and make reference to prop in child
+              if (!child.reserved(split[0]) && typeof child[split[0]] !== 'undefined') {
+                childProp = child[split[0]]
+              } else if (child.reserved(split[0]) && typeof child.invalids[split[0]] !== 'undefined') {
+                childProp = child.invalids[split[0]]
+              }
+              if (childProp === null) {
+                match = false
+              } else {
+                if (JSON.stringify(childProp.value) === JSON.stringify(prop.value)) {
+                  match = true
+                } else {
+                  if (childProp.value.constructor === Array && prop.value.constructor === Array) {
+                    prop.value.forEach(obj1 => {
+                      childProp.value.forEach(obj2 => {
+                        if (JSON.stringify(obj1) === JSON.stringify(obj2)) {
+                          match = true
+                        }
+                      })
+                    })
+                  } else {
+                    Object.keys(prop.value).forEach(key1 => {
+                      Object.keys(childProp.value).forEach(key2 => {
+                        if (JSON.stringify(prop.value[key1]) === JSON.stringify(childProp.value[key2])) {
+                          match = true
+                        }
+                      })
+                    })
+                  }
+                }
+              }
+              return match
+            })
+          } else {
+            return undefined
+          }
+          // Generate creation identifier
+          let id = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 15)
+          if (split.length === 2) {
+            let val = JSON.parse(split[1].replace('identifier', id))
+            if (prop.value === null) {
+              prop.value = val
+            } else {
+              if (prop.value.constructor === Array && val.constructor === Array) {
+                prop.value = prop.value.concat(val)
+              } else if (prop.value.constructor !== Array && val.constructor !== Array) {
+                prop.value = Object.assign(prop.value, val)
+              }
+            }
+          } else {
+            prop.value = id
+          }
+        } else {
+          return undefined
+        }
+      }
+      // Find exact match by all props (Reliable)
+      let findExactMatch = (endpoint: Endpoint) => {
+        let exchange = accessor.children.find(child => {
+          if (child.identifier === null || child.identifier.value === null) {
+            let props = child.props()
+            let endpointProps = endpoint.props()
+            let match = true // Expect match
+            Object.keys(props).forEach(key => {
+              if (typeof endpointProps[key] !== 'undefined') {
+                if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
+                  // If unchanged props doesnt match, set match to false
+                  match = false
+                }
+              } else {
+                match = false
+              }
+            })
+            Object.keys(endpointProps).forEach(key => {
+              if (typeof props[key] === 'undefined') {
+                match = false
+              }
+            })
+            return match
+          } else {
+            return false
+          }
+        })
+        return exchange
+      }
+      // Find exact match by all exisiting props (Reliable)
+      let findExactExistingMatch = (endpoint: Endpoint) => {
+        let exchange = accessor.children.find(child => {
+          if (child.identifier === null || child.identifier.value === null) {
+            let props = child.props()
+            let endpointProps = endpoint.props()
+            let match = true // Expect match
+            Object.keys(props).forEach(key => {
+              if (typeof endpointProps[key] !== 'undefined') {
+                if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
+                  // If unchanged props doesnt match, set match to false
+                  match = false
+                }
+              } else {
+                match = false
+              }
+            })
+            return match
+          } else {
+            return false
+          }
+        })
+        return exchange
+      }
+      // Find exact match by unchanged props (Less Reliable - Requires incoming props to exist)
+      let findExactUnchangedMatch = (endpoint: Endpoint) => {
+        let exchange = accessor.children.find(child => {
+          if (child.identifier === null || child.identifier.value === null) {
+            let changes = child.changes()
+            let props = child.props()
+            let endpointProps = endpoint.props()
+            let match = true // Expect match
+            Object.keys(props).forEach(key => {
+              // If not changed prop
+              if (typeof changes[key] === 'undefined') {
+                // If new child has same prop
+                if (typeof endpointProps[key] !== 'undefined') {
+                  // If they do not match
+                  if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
+                    // Skip this
+                    match = false
+                  }
+                  // If incoming prop doesnt exist
+                } else {
+                  // Skip this
+                  match = false
+                }
+              }
+            })
+            return match
+          } else {
+            return false
+          }
+        })
+        return exchange
+      }
+      // Find exact match by changed props (Less Reliable - Requires incoming props to exist)
+      let findExactChangedMatch = (endpoint: Endpoint) => {
+        let exchange = accessor.children.find(child => {
+          if (child.identifier === null || child.identifier.value === null) {
+            let changes = child.changes()
+            let props = child.props()
+            let endpointProps = endpoint.props()
+            let match = true // Expect match
+            Object.keys(props).forEach(key => {
+              // If changed prop
+              if (typeof changes[key] !== 'undefined') {
+                // If new child has same prop
+                if (typeof endpointProps[key] !== 'undefined') {
+                  // If they do not match
+                  if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
+                    // Skip this
+                    match = false
+                  }
+                  // If incoming prop doesnt exist
+                } else {
+                  // Skip this
+                  match = false
+                }
+              }
+            })
+            return match
+          } else {
+            return false
+          }
+        })
+        return exchange
+      }
+      // Find match by unchanged props (Less Reliable - Doesnt require incoming props to exist)
+      let findUnchangedMatch = (endpoint: Endpoint) => {
+        let exchange = accessor.children.find(child => {
+          if (child.identifier === null || child.identifier.value === null) {
+            let changes = child.changes()
+            let props = child.props()
+            let endpointProps = endpoint.props()
+            let match = true // Expect match
+            Object.keys(props).forEach(key => {
+              // If not changed prop
+              if (typeof changes[key] === 'undefined') {
+                // If new child has same prop
+                if (typeof endpointProps[key] !== 'undefined') {
+                  // If they do not match
+                  if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
+                    // Skip this
+                    match = false
+                  }
+                }
+              }
+            })
+            return match
+          } else {
+            return false
+          }
+        })
+        return exchange
+      }
+      // Find match by changed props (Less Reliable - Doesnt require incoming props to exist)
+      let findChangedMatch = (endpoint: Endpoint) => {
+        let exchange = accessor.children.find(child => {
+          if (child.identifier === null || child.identifier.value === null) {
+            let changes = child.changes()
+            let props = child.props()
+            let endpointProps = endpoint.props()
+            let match = true // Expect match
+            Object.keys(props).forEach(key => {
+              // If changed prop
+              if (typeof changes[key] !== 'undefined') {
+                // If new child has same prop
+                if (typeof endpointProps[key] !== 'undefined') {
+                  // If they do not match
+                  if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
+                    // Skip this
+                    match = false
+                  }
+                }
+              }
+            })
+            return match
+          } else {
+            return false
+          }
+        })
+        return exchange
+      }
+      // Find exact match by incoming props (Less Reliable - Requires existing props to have all incoming props)
+      let findExactIncomingMatch = (endpoint: Endpoint) => {
+        let exchange = accessor.children.find(child => {
+          if (child.identifier === null || child.identifier.value === null) {
+            let props = child.props()
+            let endpointProps = endpoint.props()
+            let match = true // Expect match
+            Object.keys(endpointProps).forEach(key => {
+              if (typeof props[key] !== 'undefined') {
+                if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
+                  // If props are unique
+                  match = false
+                }
+              } else {
+                // If existing doesnt have all incoming props
+                match = false
+              }
+            })
+            return match
+          } else {
+            return false
+          }
+        })
+        return exchange
+      }
+      // Find match by incoming props (Less Reliable - Doesnt require existing props to have all incoming props)
+      let findIncomingMatch = (endpoint: Endpoint) => {
+        let exchange = accessor.children.find(child => {
+          if (child.identifier === null || child.identifier.value === null) {
+            let props = child.props()
+            let endpointProps = endpoint.props()
+            let match = true // Expect match
+            Object.keys(endpointProps).forEach(key => {
+              if (typeof props[key] !== 'undefined') {
+                if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
+                  // If props are unique
+                  match = false
+                }
+              }
+            })
+            return match
+          } else {
+            return false
+          }
+        })
+        return exchange
+      }
     }
 
     /**
@@ -629,7 +1042,46 @@ export default class Endpoint {
         let hook = (map !== null && typeof map.batch !== 'undefined' && typeof map.batch.create !== 'undefined') ? map.batch.create : 'create'
         data[hook] = []
         accessor.children.forEach(child => {
+          // Create Creation Identifier
           if (child.identifier === null || child.identifier.value === null) {
+            if (map !== null && typeof map.creationIdentifier !== 'undefined') {
+              let identifier = map.creationIdentifier
+              let split = identifier.replace('=', '|=split=|').split('|=split=|')
+              let prop = split[0]
+              // Resolve mapping
+              if (typeof map.props !== 'undefined' && typeof map.props[prop] !== 'undefined') {
+                prop = map.props[prop]
+              }
+              // Check if property exist and make reference to prop
+              if (!accessor.reserved(prop) && typeof accessor[prop] !== 'undefined') {
+                prop = accessor[prop]
+              } else if (accessor.reserved(prop) && typeof accessor.invalids[prop] !== 'undefined') {
+                prop = accessor.invalids[prop]
+              } else {
+                // Create prop if not exist
+                if (!accessor.reserved(prop)) {
+                  prop = accessor[prop] = new Prop(accessor, prop)
+                } else {
+                  prop = accessor.invalids[prop] = new Prop(accessor, prop)
+                }
+              }
+              // Generate creation identifier
+              let id = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 15)
+              if (split.length === 2) {
+                let val = JSON.parse(split[1].replace('identifier', id))
+                if (prop.value === null) {
+                  prop.value = val
+                } else {
+                  if (prop.value.constructor === Array && val.constructor === Array) {
+                    prop.value = prop.value.concat(val)
+                  } else if (prop.value.constructor !== Array && val.constructor !== Array) {
+                    prop.value = Object.assign(prop.value, val)
+                  }
+                }
+              } else {
+                prop.value = id
+              }
+            }
             data[hook].push(accessor.reverseMapping(child.props()))
           }
         })

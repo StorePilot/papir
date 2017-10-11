@@ -81,6 +81,8 @@
     },
     "product_variation": {
       "identifier": "id",
+      "@note": "identifier will be replaced by random generated id. @todo - {index} could later be an option for creationIdentifier",
+      "creationIdentifier": "meta_data=[{\"key\": \"sp_batch_create_id\", \"value\": \"identifier\" }]",
       "@note": "{/id} is hooked to primary property and not map",
       "endpoint": "/products/{parent}/variations{/id}",
       "args": {
