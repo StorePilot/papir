@@ -1,6 +1,7 @@
 import Controller from '../services/controller'
 import Requester from '../services/requester'
 import Prop from './prop'
+import Query from './query'
 
 /**
  * Endpoint
@@ -59,6 +60,7 @@ export default class Endpoint {
         'connect',
         'options',
         // Property Methods
+        'query',
         'set',
         'clone',
         'changes',
@@ -238,8 +240,8 @@ export default class Endpoint {
         } else if (url[(url.length - 1)] !== '?' && url[(url.length - 1)] !== '&') {
           url += '&'
         }
-        Object.keys(args).forEach(key => {
-          url += key + '=' + args[key] + '&'
+        args.forEach(arg => {
+          url += arg.key + '=' + arg.value + '&'
         })
         if (url[(url.length - 1)] === '&') {
           url = url.slice(0, -1)
@@ -836,6 +838,13 @@ export default class Endpoint {
      * Public / Reserved Method Names
      * @warning Can not be used as a property name in models
      * ---------------
+     * Query builder (Create arguments, and make endpoints default fetch method available afterwards)
+     */
+    accessor.query = () => {
+      return new Query(accessor)
+    }
+
+    /**
      * Request Fetch @note - Related to Properties
      */
     accessor.fetch = (apiSlug = accessor.shared.defaultApi, args = null, replace = true) => {

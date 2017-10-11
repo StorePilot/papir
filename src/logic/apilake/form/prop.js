@@ -70,7 +70,7 @@ export default class Prop {
     /**
      * Request Save @note - Saves only this property
      * @apiSlug Use custom api by slug
-     * @args Custom arguments as object (key: value)
+     * @args Custom arguments as array [{key: '', value: ''}]
      * @replace replace all properties in endpoint from response
      * @create Attempt to create if save fails (Ex.: if no id provided to endpoint)
      */
