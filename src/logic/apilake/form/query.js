@@ -1,11 +1,8 @@
-import Endpoint from './endpoint'
-
 /**
  * Query
  */
 export default class Query {
-
-  constructor (endpoint: Endpoint) {
+  constructor (endpoint) {
     let accessor = this
     let queries = []
     let argsMap = {}
@@ -186,7 +183,7 @@ export default class Query {
       // Merge args with queries as its just two different ways of using args
       if (args !== null) {
         args.forEach(arg => {
-          custom(arg.key, arg.value)
+          accessor.custom(arg.key, arg.value)
         })
       }
       return endpoint.fetch(apiSlug, accessor.queries, replace)

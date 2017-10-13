@@ -1,14 +1,12 @@
 import util from './util'
-import axios from 'axios'
+import { axios, CancelToken } from 'axios'
 import qs from 'qs'
 
 /**
  * Requester
  */
 export default class Requester {
-
   constructor (customConf = {}) {
-
     this.requester = 'default'
     this.conf = {
       addDataToQuery: true,
@@ -265,7 +263,10 @@ export default class Requester {
           let hook = query[1]
           if (param.length > 0) {
             try {
+              // @warning - eval can be harmful if used server side
+              /* eslint-disable */
               let nonce = String(eval(hook))
+              /* eslint-enable */
               if (request.url.indexOf('?') === -1) {
                 request.url += '?' + param + '=' + nonce
               } else {
@@ -287,7 +288,7 @@ export default class Requester {
 
     this.makeAbortable = (request, promise) => {
       let cancel
-      request.cancelToken = new CancelToken(function executor(c) {
+      request.cancelToken = new CancelToken(function executor (c) {
         cancel = c
       })
       promise.then(() => {
@@ -295,7 +296,5 @@ export default class Requester {
       })
       return request
     }
-
   }
-
 }

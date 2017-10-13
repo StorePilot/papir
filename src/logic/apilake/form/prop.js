@@ -1,11 +1,8 @@
-import Endpoint from './endpoint'
-
 /**
  * Prop
  */
 export default class Prop {
-  constructor (parent: Endpoint, key: string, value: any = null) {
-
+  constructor (parent, key, value = null) {
     /**
      * Public Scope
      */
@@ -21,9 +18,7 @@ export default class Prop {
 
     /**
      * Private methods
-     */
-    
-    /**
+     * ---------------
      * Start Loader
      */
     let startLoader = (loadSlug) => {
@@ -74,7 +69,7 @@ export default class Prop {
      * @replace replace all properties in endpoint from response
      * @create Attempt to create if save fails (Ex.: if no id provided to endpoint)
      */
-    accessor.save = (apiSlug = apiSlug, args = null, replace = true, create = true) => {
+    accessor.save = (apiSlug = parent.shared.defaultApi, args = null, replace = true, create = true) => {
       let obj = {}
       obj[key] = accessor.value
       return new Promise((resolve, reject) => {
@@ -111,10 +106,12 @@ export default class Prop {
             reject(error)
           }
         })
-      }).catch(error => {})
+      }).catch(error => {
+        console.error(error)
+      })
     }
 
-    accessor.fetch = (apiSlug = apiSlug, args = null, replace = true) => {
+    accessor.fetch = (apiSlug = parent.shared.defaultApi, args = null, replace = true) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'fetch'
         startLoader(loadSlug)
@@ -135,10 +132,12 @@ export default class Prop {
           stopLoader(loadSlug)
           reject(error)
         })
-      }).catch(error => {})
+      }).catch(error => {
+        console.error(error)
+      })
     }
 
-    this.clone = (clone = accessor.value) => {
+    this.clone = () => {
       let clone = new Prop(parent, key, value)
       try {
         clone.value = JSON.parse(JSON.stringify(accessor.value))
@@ -147,6 +146,5 @@ export default class Prop {
       }
       return clone
     }
-
   }
 }

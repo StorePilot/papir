@@ -1,5 +1,3 @@
-import Controller from '../services/controller'
-import Requester from '../services/requester'
 import Prop from './prop'
 import Query from './query'
 import axios from 'axios'
@@ -8,7 +6,7 @@ import axios from 'axios'
  * Endpoint
  */
 export default class Endpoint {
-  constructor (endpoint: string, controller: Controller | Requester, apiSlug = null, predefined = {}) {
+  constructor (endpoint, controller, apiSlug = null, predefined = {}) {
     /**
      * Public Scope
      */
@@ -37,7 +35,7 @@ export default class Endpoint {
       map: null,
       endpoint: endpoint,
       controller: controller,
-      requester: Requester = controller,
+      requester: controller,
       predefined: predefined,
       accessor: accessor,
       reserved: [
@@ -399,9 +397,9 @@ export default class Endpoint {
      * Exchange endpoint in accessor.children with match from input
      * @returns Endpoint (exchanged) | Endpoint.children (On Remove) | false (If no match found)
      */
-    accessor.shared.exchange = (endpoint: Endpoint, reliable = false, remove = false, map = accessor.shared.map) => {
+    accessor.shared.exchange = (endpoint, reliable = false, remove = false, map = accessor.shared.map) => {
       // @note - This could be more heavy and alot slower
-      let smartFind = (endpoint: Endpoint) => {
+      let smartFind = (endpoint) => {
         // Reliable.
         // Check for Creation Identifier match.
         let exchange = resolveCreationIdentifier(endpoint)
@@ -475,7 +473,7 @@ export default class Endpoint {
         return exchange
       }
       // Resolve Creation Identifier
-      let resolveCreationIdentifier = (endpoint: Endpoint) => {
+      let resolveCreationIdentifier = (endpoint) => {
         if (map !== null && typeof map.creationIdentifier !== 'undefined') {
           let identifier = map.creationIdentifier
           let split = identifier.replace('=', '|=split=|').split('|=split=|')
@@ -536,7 +534,7 @@ export default class Endpoint {
         }
       }
       // Find exact match by all props (Reliable)
-      let findExactMatch = (endpoint: Endpoint) => {
+      let findExactMatch = (endpoint) => {
         let exchange = accessor.children.find(child => {
           if (child.identifier === null || child.identifier.value === null) {
             let props = child.props()
@@ -565,7 +563,7 @@ export default class Endpoint {
         return exchange
       }
       // Find exact match by all exisiting props (Reliable)
-      let findExactExistingMatch = (endpoint: Endpoint) => {
+      let findExactExistingMatch = (endpoint) => {
         let exchange = accessor.children.find(child => {
           if (child.identifier === null || child.identifier.value === null) {
             let props = child.props()
@@ -589,7 +587,7 @@ export default class Endpoint {
         return exchange
       }
       // Find exact match by unchanged props (Less Reliable - Requires incoming props to exist)
-      let findExactUnchangedMatch = (endpoint: Endpoint) => {
+      let findExactUnchangedMatch = (endpoint) => {
         let exchange = accessor.children.find(child => {
           if (child.identifier === null || child.identifier.value === null) {
             let changes = child.changes()
@@ -621,7 +619,7 @@ export default class Endpoint {
         return exchange
       }
       // Find exact match by changed props (Less Reliable - Requires incoming props to exist)
-      let findExactChangedMatch = (endpoint: Endpoint) => {
+      let findExactChangedMatch = (endpoint) => {
         let exchange = accessor.children.find(child => {
           if (child.identifier === null || child.identifier.value === null) {
             let changes = child.changes()
@@ -653,7 +651,7 @@ export default class Endpoint {
         return exchange
       }
       // Find match by unchanged props (Less Reliable - Doesnt require incoming props to exist)
-      let findUnchangedMatch = (endpoint: Endpoint) => {
+      let findUnchangedMatch = (endpoint) => {
         let exchange = accessor.children.find(child => {
           if (child.identifier === null || child.identifier.value === null) {
             let changes = child.changes()
@@ -681,7 +679,7 @@ export default class Endpoint {
         return exchange
       }
       // Find match by changed props (Less Reliable - Doesnt require incoming props to exist)
-      let findChangedMatch = (endpoint: Endpoint) => {
+      let findChangedMatch = (endpoint) => {
         let exchange = accessor.children.find(child => {
           if (child.identifier === null || child.identifier.value === null) {
             let changes = child.changes()
@@ -709,7 +707,7 @@ export default class Endpoint {
         return exchange
       }
       // Find exact match by incoming props (Less Reliable - Requires existing props to have all incoming props)
-      let findExactIncomingMatch = (endpoint: Endpoint) => {
+      let findExactIncomingMatch = (endpoint) => {
         let exchange = accessor.children.find(child => {
           if (child.identifier === null || child.identifier.value === null) {
             let props = child.props()
@@ -734,7 +732,7 @@ export default class Endpoint {
         return exchange
       }
       // Find match by incoming props (Less Reliable - Doesnt require existing props to have all incoming props)
-      let findIncomingMatch = (endpoint: Endpoint) => {
+      let findIncomingMatch = (endpoint) => {
         let exchange = accessor.children.find(child => {
           if (child.identifier === null || child.identifier.value === null) {
             let props = child.props()

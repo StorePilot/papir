@@ -6,9 +6,7 @@ import Requester from './requester'
  * Controller
  */
 export class Controller {
-
   constructor () {
-
     this.default = null
     this.requesters = {}
     this.apis = {}
@@ -35,9 +33,7 @@ export class Controller {
       }
       this.apis[api.slug] = api
     })
-
   }
-
 }
 
 export default new Controller()

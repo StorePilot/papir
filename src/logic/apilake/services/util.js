@@ -1,5 +1,4 @@
 class Util {
-
   constructor () {
     this.timestamp = (length = 30) => {
       return Number(String(new Date().getTime()).substring(0, length))
@@ -83,7 +82,6 @@ class Util {
       return params
     }
   }
-
 }
 
 export default new Util()
