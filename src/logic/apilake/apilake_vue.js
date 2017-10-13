@@ -5,11 +5,13 @@ import Endpoint from './form/endpoint'
 /**
  * Apilake
  */
-class Apilake {
-  constructor () {
-    this.controller = controller
-    this.Endpoint = Endpoint
-    this.Requester = Requester
+const Apilake = {
+  install (Vue) {
+    Vue.prototype.$al = {
+      controller: controller,
+      Endpoint: Endpoint,
+      Requester: Requester
+    }
   }
 }
 

@@ -1,25 +1,25 @@
 <template>
   <el-row style="height: 100%;">
     <el-col :sm="5" :lg="3" style="min-height: calc(100% - 36px);">
-      <el-menu style="min-height: calc(100vh - 36px);" default-active="1" class="el-menu-vertical-demo" theme="dark">
+      <el-menu style="min-height: calc(100vh - 36px);" default-active="0" class="el-menu-vertical-demo" theme="dark">
         <h3 style="color: white; margin: 20px;">API's</h3>
-        <el-menu-item index="1">
-          My First Api
+        <el-menu-item v-for="(api, index) in apis" :index="String(index)" :key="api.slug">
+          {{api.slug}}
         </el-menu-item>
       </el-menu>
     </el-col>
     <el-col :sm="5" :lg="3">
-      <el-menu style="min-height: calc(100vh - 36px);" default-active="1" class="el-menu-vertical-demo">
+      <el-menu style="min-height: calc(100vh - 36px);" default-active="0" class="el-menu-vertical-demo">
         <h3 style="margin: 20px;">Endpoints</h3>
-        <el-menu-item index="1">
-          My First Endpoint
+        <el-menu-item v-for="(endpoint, index) in api.mappings" :index="String(index)" :key="endpoint.name">
+          {{endpoint.name}}
         </el-menu-item>
       </el-menu>
     </el-col>
     <el-col :sm="14" :lg="18">
-      <el-tabs type="border-card" style="max-height: 44vh; overflow-y: scroll;">
+      <el-tabs type="border-card" style="max-height: 44vh; overflow-y: scroll;" v-model="activeTab">
 
-        <el-tab-pane label="API">
+        <el-tab-pane name="api" label="API">
           <el-col :lg="12" style="padding: 10px;">
             <h3>API - Base URL</h3>
             <el-input v-model="api.base" placeholder="http://myapi.com/v2"></el-input>
@@ -50,7 +50,136 @@
           </el-col>
         </el-tab-pane>
 
-        <el-tab-pane label="Data">
+        <el-tab-pane name="endpoint" label="Endpoint">
+          <el-col :lg="12" style="padding: 10px;">
+            <h3>Endpoint - Path</h3>
+            <el-input v-model="endpoint.endpoint" placeholder="/users{/id}"></el-input>
+            <h3>Identifier</h3>
+            <el-input v-model="endpoint.identifier" placeholder="Usually the id property"></el-input>
+            <h3>Creation Identifier</h3>
+            <el-input v-model="endpoint.creationIdentifier" placeholder="Usually the id property"></el-input>
+          </el-col>
+          <el-col :lg="12" style="padding: 10px;">
+            <h3>
+              Multiple
+              <span style="font-size: .7em">
+                Does the endpoint respond with single or multiple elements
+              </span>
+            </h3>
+            <el-switch
+                v-model="endpoint.multiple"
+                on-color="#13ce66"
+                off-color="#ff4949">
+            </el-switch>
+            <h3 v-show="endpoint.multiple">
+              Child
+              <span style="font-size: .7em">
+                If this endpoint has multiple elements, map to children endpoint
+              </span>
+            </h3>
+            <el-input
+                v-show="endpoint.multiple"
+                v-model="endpoint.child"
+                placeholder="Ex. if this EP is 'products' you can insert 'product'"></el-input>
+          </el-col>
+        </el-tab-pane>
+
+        <el-tab-pane name="mapping" label="Endpoint Mapping">
+          <el-col :lg="12" style="padding: 10px;">
+            <h3>Properties Mapping</h3>
+            <div class="el-table">
+              <table style="width: 100%; text-align: left">
+                <tr>
+                  <th>Key</th>
+                  <th>Value</th>
+                  <th>Delete</th>
+                </tr>
+                <tr v-for="(prop, index) in endpoint.props">
+                  <td>
+                    <el-input v-model="prop.key"></el-input>
+                  </td>
+                  <td>
+                    <el-input v-model="prop.value"></el-input>
+                  </td>
+                  <td>
+                    <el-button style="margin-bottom: 20px" @click="endpoint.props.splice(index, 1)">Clear</el-button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <el-button style="margin-top: 10px;" @click="endpoint.props.push({ key: '', value: '' })">Add</el-button>
+            <h3>Headers Mapping</h3>
+            <div class="el-table">
+              <table style="width: 100%; text-align: left">
+                <tr>
+                  <th>Key</th>
+                  <th>Value</th>
+                  <th>Delete</th>
+                </tr>
+                <tr v-for="(head, index) in endpoint.headers">
+                  <td>
+                    <el-input v-model="head.key"></el-input>
+                  </td>
+                  <td>
+                    <el-input v-model="head.value"></el-input>
+                  </td>
+                  <td>
+                    <el-button style="margin-bottom: 20px" @click="endpoint.headers.splice(index, 1)">Clear</el-button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <el-button style="margin-top: 10px;" @click="endpoint.headers.push({ key: '', value: '' })">Add</el-button>
+          </el-col>
+          <el-col :lg="12" style="padding: 10px;">
+            <h3>Arguments Mapping</h3>
+            <div class="el-table">
+              <table style="width: 100%; text-align: left">
+                <tr>
+                  <th>Key</th>
+                  <th>Value</th>
+                  <th>Delete</th>
+                </tr>
+                <tr v-for="(arg, index) in endpoint.args">
+                  <td>
+                    <el-input v-model="arg.key"></el-input>
+                  </td>
+                  <td>
+                    <el-input v-model="arg.value"></el-input>
+                  </td>
+                  <td>
+                    <el-button style="margin-bottom: 20px" @click="endpoint.args.splice(index, 1)">Clear</el-button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <el-button style="margin-top: 10px;" @click="endpoint.args.push({ key: '', value: '' })">Add</el-button>
+            <h3>Batch Mapping</h3>
+            <div class="el-table">
+              <table style="width: 100%; text-align: left">
+                <tr>
+                  <th>Key</th>
+                  <th>Value</th>
+                  <th>Delete</th>
+                </tr>
+                <tr v-for="(map, index) in endpoint.batch">
+                  <td>
+                    <el-input v-model="map.key"></el-input>
+                  </td>
+                  <td>
+                    <el-input v-model="map.value"></el-input>
+                  </td>
+                  <td>
+                    <el-button style="margin-bottom: 20px" @click="endpoint.batch.splice(index, 1)">Clear</el-button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <el-button style="margin-top: 10px;" @click="endpoint.batch.push({ key: '', value: '' })">Add</el-button>
+          </el-col>
+        </el-tab-pane>
+
+        <el-tab-pane name="data" label="Data">
           <el-col :lg="12" style="padding: 10px;">
             <h3>Data Type</h3>
             <el-select
@@ -98,7 +227,7 @@
           </el-col>
         </el-tab-pane>
 
-        <el-tab-pane label="Query Params">
+        <el-tab-pane name="params" label="Query Params">
           <el-col :lg="12" style="padding: 10px;">
             <h3>
               Index Arrays
@@ -150,7 +279,7 @@
           </el-col>
         </el-tab-pane>
 
-        <el-tab-pane label="Authentication">
+        <el-tab-pane name="auth" label="Authentication">
           <el-col :lg="12" style="padding: 10px;">
             <h3>Authentication Method</h3>
             <el-select v-model="api.config.authentication" placeholder="Select">
@@ -192,7 +321,7 @@
           </el-col>
         </el-tab-pane>
 
-        <el-tab-pane label="Signature">
+        <el-tab-pane name="sign" label="Signature">
           <el-col :lg="12" style="padding: 10px;">
             <h3>Nonce</h3>
             <el-input placeholder="Auto generated if not set" v-model="api.config.nonce"></el-input>
@@ -223,7 +352,7 @@
           </el-col>
         </el-tab-pane>
 
-        <el-tab-pane label="Cookies">
+        <el-tab-pane name="cookies" label="Cookies">
           <el-col :lg="12" style="padding: 10px;">
             <h3>Cookie Nonce Generation by Localized variable</h3>
             <el-input v-model="api.config.taleNonce"></el-input>
@@ -244,7 +373,7 @@
           </el-col>
         </el-tab-pane>
 
-        <el-tab-pane label="Headers">
+        <el-tab-pane name="headers" label="Headers">
           <h3>Add Authentication Params to Header</h3>
           <el-switch
               v-model="api.config.addAuthHeaders"
@@ -253,7 +382,7 @@
           </el-switch>
         </el-tab-pane>
 
-        <el-tab-pane label="Cross Origin">
+        <el-tab-pane name="cors" label="Cross Origin">
           <h3>Use OPTIONS requests with _method to override</h3>
           <el-switch
               v-model="api.config.dualAuth"
@@ -266,10 +395,11 @@
               on-color="#13ce66"
               off-color="#ff4949">
           </el-switch>
-          <h5>Preflight Monitor</h5>
+          <h3>Preflight Monitor</h3>
+          <span>Should notify if anything could cause preflight</span>
         </el-tab-pane>
-        <el-tab-pane label="Configuration Overview">
-          <pre>{{api}}</pre>
+        <el-tab-pane name="view" label="Overview">
+          <pre>{{config}}</pre>
         </el-tab-pane>
       </el-tabs>
       <el-row style="max-height: 44vh; overflow-y: scroll;">
@@ -277,12 +407,12 @@
           <el-card style="margin: 20px 10px 10px;" class="box-card">
             <div slot="header" class="clearfix">
               <span style="line-height: 36px;">Request</span>
-              <el-button style="float: right">Fire</el-button>
+              <el-button style="float: right" type="warning">Fire</el-button>
             </div>
-            <h5>Url</h5>
+            <b>Url:</b> {{api.base + endpoint.endpoint}}
             <h5>Method</h5>
             <h5>Headers</h5>
-            <h5>Query String Params</h5>
+            <h5>Query Params</h5>
             <h5>Data</h5>
           </el-card>
         </el-col>
@@ -291,6 +421,7 @@
             <div slot="header" class="clearfix">
               <span style="line-height: 36px;">Response</span>
             </div>
+            <h5>Preflight</h5>
             <h5>Status Code</h5>
             <h5>Headers</h5>
             <h5>Data</h5>
@@ -298,14 +429,77 @@
         </el-col>
       </el-row>
       <el-col :lg="24">
-        <el-steps center style="margin: 20px;" :space="100" :active="1">
-          <el-step icon="edit"></el-step>
-          <el-step icon="upload"></el-step>
-          <el-step icon="picture"></el-step>
+        <el-steps align-center center style="margin: 20px;" :space="100" :active="step">
+          <div
+              @click="activeTab='api'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="setting" title="API"></el-step>
+          </div>
+          <div
+              @click="activeTab='endpoint'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="share" title="Endpoint"></el-step>
+          </div>
+          <div
+              @click="activeTab='mapping'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="d-arrow-right" title="Mapping"></el-step>
+          </div>
+          <div
+              @click="activeTab='data'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="picture" title="Data"></el-step>
+          </div>
+          <div
+              @click="activeTab='params'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="search" title="Params"></el-step>
+          </div>
+          <div
+              @click="activeTab='auth'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="warning" title="Auth"></el-step>
+          </div>
+          <div
+              @click="activeTab='sign'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="edit" title="Signature"></el-step>
+          </div>
+          <div
+              @click="activeTab='cookies'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="menu" title="Cookies"></el-step>
+          </div>
+          <div
+              @click="activeTab='headers'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="message" title="Headers"></el-step>
+          </div>
+          <div
+              @click="activeTab='cors'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="close" title="Cors"></el-step>
+          </div>
+          <div
+              @click="activeTab='view'"
+              class="el-step is-horizontal"
+              style="width: 100px; margin-right: -2.8px; cursor: pointer">
+            <el-step icon="check" title="Overview"></el-step>
+          </div>
         </el-steps>
       </el-col>
     </el-col>
-    <el-input v-model="url" class="addressbar" placeholder="Generated URL"></el-input>
+    <el-input disabled v-model="url" class="addressbar" placeholder="Generated URL"></el-input>
   </el-row>
 </template>
 
@@ -314,7 +508,26 @@
     name: 'shell',
     data () {
       return {
-        url: '',
+        endpointRequester: null,
+        apis: [],
+        activeTab: 'api',
+        step: 1,
+        endpoint: {
+          // @note - args, batch, props, headers should be converted to object at export / fire
+          endpoint: '',
+          multiple: false,
+          child: '',
+          args: [],
+          batch: [
+            {key: 'save', value: 'update'},
+            {key: 'create', value: 'create'},
+            {key: 'delete', value: 'delete'}
+          ],
+          props: [],
+          headers: [],
+          identifier: '',
+          creationIdentifier: ''
+        },
         args: [],
         api: {
           base: 'http://localhost:9001/wp_json/wc/v2',
@@ -362,13 +575,147 @@
           dataType: '',
           charset: '',
           data: '',
-          file: null
+          file: null,
+          // @note - endpoints should be converted to object at export / fire
+          mappings: [
+            {
+              // @note - args, batch, props, headers should be converted to object at export / fire
+              name: 'products',
+              endpoint: '',
+              multiple: false,
+              child: '',
+              args: [],
+              batch: [
+                {key: 'save', value: 'update'},
+                {key: 'create', value: 'create'},
+                {key: 'delete', value: 'delete'}
+              ],
+              props: [],
+              headers: [],
+              identifier: '',
+              creationIdentifier: ''
+            }
+          ]
         }
       }
     },
+    computed: {
+      url () {
+        if (this.endpointRequester !== null) {
+          console.log(this.endpointRequester)
+          return this.endpointRequester.shared.resolveUrl()
+        } else {
+          return (this.api.base + this.endpoint.endpoint)
+        }
+      },
+      config () {
+        let clone = JSON.parse(JSON.stringify(this.api))
+        clone.mappings = {}
+        this.api.mappings.forEach(endpoint => {
+          let argsClone = JSON.parse(JSON.stringify(endpoint.args))
+          endpoint.args = {}
+          if (argsClone.constructor === Array) {
+            argsClone.forEach(arg => {
+              endpoint.args[arg.key] = arg.value
+            })
+          }
+
+          let batchClone = JSON.parse(JSON.stringify(endpoint.batch))
+          endpoint.batch = {}
+          if (batchClone.constructor === Array) {
+            batchClone.forEach(batch => {
+              endpoint.batch[batch.key] = batch.value
+            })
+          }
+
+          let propsClone = JSON.parse(JSON.stringify(endpoint.props))
+          endpoint.props = {}
+          if (propsClone.constructor === Array) {
+            propsClone.forEach(prop => {
+              endpoint.props[prop.key] = prop.value
+            })
+          }
+
+          let headersClone = JSON.parse(JSON.stringify(endpoint.headers))
+          endpoint.headers = {}
+          if (headersClone.constructor === Array) {
+            headersClone.forEach(header => {
+              endpoint.headers[header.key] = header.value
+            })
+          }
+
+          let endpointClone = JSON.parse(JSON.stringify(endpoint))
+          delete endpointClone.name
+
+          clone.mappings[endpoint.name] = endpointClone
+        })
+        return clone
+      }
+    },
+    created () {
+      this.apis.push(this.api)
+    },
     watch: {
+      config (val) {
+        let api = JSON.parse(JSON.stringify(val))
+        console.log(this.$al)
+        let controller = this.$al.controller
+        controller.apis[api.slug] = api
+        if (api.default || controller.default === null) {
+          controller.default = api.slug
+        }
+        if (
+          typeof api.requester !== 'undefined' &&
+          typeof controller.requesters[api.requester] !== 'undefined'
+        ) {
+          api.requester = new controller.requesters[api.requester](api.config)
+        } else {
+          api.requester = new this.$al.Requester(api.config)
+        }
+        this.endpointRequester = new this.$al.Endpoint(this.endpoint.endpoint, controller)
+      },
       'api.config.authentication' (value) {
         this.api.requester = value
+      },
+      activeTab (val) {
+        switch (val) {
+          case 'api':
+            this.step = 1
+            break
+          case 'endpoint':
+            this.step = 2
+            break
+          case 'mapping':
+            this.step = 3
+            break
+          case 'data':
+            this.step = 4
+            break
+          case 'params':
+            this.step = 5
+            break
+          case 'auth':
+            this.step = 6
+            break
+          case 'sign':
+            this.step = 7
+            break
+          case 'cookies':
+            this.step = 8
+            break
+          case 'headers':
+            this.step = 9
+            break
+          case 'cors':
+            this.step = 10
+            break
+          case 'view':
+            this.step = 11
+            break
+          default:
+            this.step = 1
+            break
+        }
       }
     },
     methods: {
