@@ -1,20 +1,28 @@
-import Form from './mod/form'
-import Sign from './auth/sign'
-import Oauth from './auth/oauth'
+import controller from './services/controller'
+import Endpoint from './form/endpoint'
 
 /**
  * Apilake
+ */
+export default class Apilake {
+
+  constructor () {
+    this.controller = controller
+    this.Endpoint = Endpoint
+  }
+
+}
+
+/**
+ * ApilakeVue
  */
 const ApilakeVue = {
 
   install (Vue) {
     Vue.prototype.$al = {
-      sign: new Sign(),
-      Oauth: new Oauth(),
-      Form: new Form()
+      controller: controller,
+      Endpoint: Endpoint
     }
   }
 
 }
-
-export default Apilake

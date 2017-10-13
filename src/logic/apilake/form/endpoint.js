@@ -2,14 +2,13 @@ import Controller from '../services/controller'
 import Requester from '../services/requester'
 import Prop from './prop'
 import Query from './query'
+import axios from 'axios'
 
 /**
  * Endpoint
  */
 export default class Endpoint {
-
   constructor (endpoint: string, controller: Controller | Requester, apiSlug = null, predefined = {}) {
-
     /**
      * Public Scope
      */
@@ -33,11 +32,13 @@ export default class Endpoint {
      * Shared Variables
      */
     accessor.shared = {
+      api: null,
       defaultApi: apiSlug,
       map: null,
       endpoint: endpoint,
       controller: controller,
       requester: Requester = controller,
+      predefined: predefined,
       accessor: accessor,
       reserved: [
         'loading',
@@ -78,11 +79,10 @@ export default class Endpoint {
         'reserved'
       ]
     }
-    
+
     /**
      * Private Variables
      */
-    let api = null
     let cancelers = {
       fetch: null,
       save: null,
@@ -113,24 +113,24 @@ export default class Endpoint {
       /**
        * Map Resolver
        */
-      let resolveMap = (endpoint = endpoint, api = api) => {
+      let resolveMap = () => {
         let map = null
         try {
-          map = api.mappings[endpoint]
+          map = accessor.shared.api.mappings[accessor.shared.endpoint]
         } catch (e) {}
         return map
       }
       /**
        * Resolve Requester
        */
-      if (typeof controller.apis !== 'undefined') {
-        accessor.shared.defaultApi = accessor.shared.defaultApi === null ? controller.default : accessor.shared.defaultApi
-        api = controller.apis[accessor.shared.defaultApi]
-        accessor.shared.requester = api.requester
-        accessor.shared.map = resolveMap(endpoint, api)
-        accessor.shared.buildProps(accessor.shared.map, predefined)
+      if (typeof accessor.shared.controller.apis !== 'undefined') {
+        accessor.shared.defaultApi = accessor.shared.defaultApi === null ? accessor.shared.controller.default : accessor.shared.defaultApi
+        accessor.shared.api = accessor.shared.controller.apis[accessor.shared.defaultApi]
+        accessor.shared.requester = accessor.shared.api.requester
+        accessor.shared.map = resolveMap()
+        accessor.shared.buildProps(accessor.shared.map, accessor.shared.predefined)
       } else {
-        controller = null
+        accessor.shared.controller = null
       }
     }
     init() // Run at Construction
@@ -142,7 +142,7 @@ export default class Endpoint {
     /**
      * Build mapped / predefined properties
      */
-    accessor.shared.buildProps = (map = accessor.shared.map, predefined = predefined) => {
+    accessor.shared.buildProps = (map = accessor.shared.map, predefined = accessor.shared.predefined) => {
       if (map !== null && typeof map.props !== 'undefined') {
         try {
           Object.keys(map.props).forEach(key => {
@@ -152,8 +152,7 @@ export default class Endpoint {
               accessor.invalids[map.props[key]] = new Prop(accessor, map.props[key], null)
             }
           })
-        }
-         catch (error) {
+        } catch (error) {
           console.error('Error in property mapping for api ' + accessor.shared.defaultApi)
           console.error(map.props)
         }
@@ -172,8 +171,7 @@ export default class Endpoint {
             }
           }
         })
-      }
-      catch (error) {
+      } catch (error) {
         console.error('Error in predefined properties')
         console.error(predefined)
       }
@@ -199,7 +197,7 @@ export default class Endpoint {
     /**
      * Url Resolver
      */
-    accessor.shared.resolveUrl = (endpoint = endpoint, map = accessor.shared.map, api = api, args = null) => {
+    accessor.shared.resolveUrl = (endpoint = accessor.shared.endpoint, map = accessor.shared.map, api = accessor.shared.api, args = null) => {
       let base = api !== null ? api.base : ''
       // Remove last slash if any from base
       if (base.length > 0 && base[(base.length - 1)] === '/') {
@@ -297,7 +295,7 @@ export default class Endpoint {
           let parsed = JSON.parse(data)
           if (!batch && !multiple) {
             // Parse Data
-            let response = accessor.set(parsed, false, true, key)
+            response = accessor.set(parsed, false, true, key)
           } else if (batch && map !== null) {
             // Exchange all without delete
             parsed.forEach(method => {
@@ -306,19 +304,19 @@ export default class Endpoint {
                 ((typeof map.batch === 'undefined' || typeof map.batch.delete === 'undefined') && method !== 'delete')
               ) {
                 method.forEach(child => {
-                  let endpoint = new Endpoint(map.child, controller, apiSlug, child)
+                  let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, child)
                   accessor.shared.exchange(endpoint)
                 })
               } else {
                 method.forEach(child => {
-                  let endpoint = new Endpoint(map.child, controller, apiSlug, child)
+                  let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, child)
                   accessor.shared.exchange(endpoint, false, true)
                 })
               }
             })
           } else if (multiple && map !== null) {
             parsed.forEach(child => {
-              let endpoint = new Endpoint(map.child, controller, apiSlug, child)
+              let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, child)
               accessor.shared.exchange(endpoint)
             })
           }
@@ -344,12 +342,12 @@ export default class Endpoint {
         // @todo - Add additional parsers. Ex. xml
 
         if (!resolved) {
-          reject({
+          reject(new Error({
             error: 'Invalid Data',
             message: 'Could not parse data from response',
             data: data,
             response: response
-          })
+          }))
         }
       })
     }
@@ -382,8 +380,8 @@ export default class Endpoint {
     /**
      * Handle Request Success Response
      */
-    accessor.shared.handleSuccess = (response, replace = true, key = null, batch = false) => {
-      let multiple = (map !== null && typeof map.multiple !== null && map.multiple)
+    accessor.shared.handleSuccess = (response, replace = true, key = null, batch = false, map = accessor.shared.map) => {
+      let multiple = (map !== null && typeof map.multiple !== 'undefined' && map.multiple)
       return new Promise((resolve, reject) => {
         if (replace) {
           accessor.shared.handleMapping(response, key, batch, multiple).then(results => {
@@ -402,33 +400,6 @@ export default class Endpoint {
      * @returns Endpoint (exchanged) | Endpoint.children (On Remove) | false (If no match found)
      */
     accessor.shared.exchange = (endpoint: Endpoint, reliable = false, remove = false, map = accessor.shared.map) => {
-      let exchange
-      if (endpoint.identifier !== null) {
-        exchange = accessor.children.find(child => {
-          return child.identifier !== null && child.identifier.value === endpoint.identifier.value
-        })
-        if (typeof exchange === 'undefined') {
-          exchange = smartFind(endpoint)
-        }
-      } else {
-        exchange = smartFind(endpoint)
-      }
-      if (typeof exchange !== 'undefined' && !remove) {
-        // Handle Exchange
-        return exchange.set(endpoint, false)
-      } else if (!remove) {
-        // If no match found, push to children
-        return false
-      } else if (typeof exchange !== 'undefined') {
-        // Handle Remove
-        let index = accessor.children.indexOf(exchange)
-        if (index !== -1 ) {
-          accessor.children.splice(index, 1)
-        }
-        return accessor.children
-      } else {
-        return false
-      }
       // @note - This could be more heavy and alot slower
       let smartFind = (endpoint: Endpoint) => {
         // Reliable.
@@ -559,22 +530,6 @@ export default class Endpoint {
             })
           } else {
             return undefined
-          }
-          // Generate creation identifier
-          let id = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 15)
-          if (split.length === 2) {
-            let val = JSON.parse(split[1].replace('identifier', id))
-            if (prop.value === null) {
-              prop.value = val
-            } else {
-              if (prop.value.constructor === Array && val.constructor === Array) {
-                prop.value = prop.value.concat(val)
-              } else if (prop.value.constructor !== Array && val.constructor !== Array) {
-                prop.value = Object.assign(prop.value, val)
-              }
-            }
-          } else {
-            prop.value = id
           }
         } else {
           return undefined
@@ -800,6 +755,33 @@ export default class Endpoint {
         })
         return exchange
       }
+      let exchange
+      if (endpoint.identifier !== null) {
+        exchange = accessor.children.find(child => {
+          return child.identifier !== null && child.identifier.value === endpoint.identifier.value
+        })
+        if (typeof exchange === 'undefined') {
+          exchange = smartFind(endpoint)
+        }
+      } else {
+        exchange = smartFind(endpoint)
+      }
+      if (typeof exchange !== 'undefined' && !remove) {
+        // Handle Exchange
+        return exchange.set(endpoint, false)
+      } else if (!remove) {
+        // If no match found, push to children
+        return false
+      } else if (typeof exchange !== 'undefined') {
+        // Handle Remove
+        let index = accessor.children.indexOf(exchange)
+        if (index !== -1) {
+          accessor.children.splice(index, 1)
+        }
+        return accessor.children
+      } else {
+        return false
+      }
     }
 
     /**
@@ -822,7 +804,7 @@ export default class Endpoint {
       }
       return new Promise((resolve, reject) => {
         startLoader(method)
-        let api = controller !== null ? controller.apis[apiSlug] : api
+        let api = accessor.shared.controller !== null ? accessor.shared.controller.apis[apiSlug] : accessor.shared.api
         accessor.shared.requester[method.toLowerCase()](accessor.shared.resolveUrl(endpoint, accessor.shared.map, api, args), promise, data, upload, conf).then(response => {
           accessor.raw = response
           stopLoader(method)
@@ -831,7 +813,9 @@ export default class Endpoint {
           stopLoader(method)
           reject(accessor.shared.handleError(error))
         })
-      }).catch(error => {})
+      }).catch(error => {
+        console.error(error)
+      })
     }
 
     /**
@@ -847,7 +831,11 @@ export default class Endpoint {
     /**
      * Request Fetch @note - Related to Properties
      */
-    accessor.fetch = (apiSlug = accessor.shared.defaultApi, args = null, replace = true) => {
+    accessor.fetch = (
+      apiSlug = accessor.shared.defaultApi,
+      args = null,
+      replace = true
+    ) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'fetch'
         startLoader(loadSlug)
@@ -868,9 +856,11 @@ export default class Endpoint {
           stopLoader(loadSlug)
           reject(error)
         })
-      }).catch(error => {})
+      }).catch(error => {
+        console.error(error)
+      })
     }
-    
+
     /**
      * Request Save @note - Saves all changed Properties
      * @apiSlug Use custom api by slug
@@ -885,7 +875,7 @@ export default class Endpoint {
       create = true,
       map = accessor.shared.map
     ) => {
-      if (map !== null && typeof map.multiple !== null && map.multiple) {
+      if (map !== null && typeof map.multiple !== 'undefined' && map.multiple) {
         return accessor.batch({ create: create }, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
@@ -902,9 +892,9 @@ export default class Endpoint {
               )
             )
           ).then(response => {
-            accessor.shared.handleSuccess(response, replace).then(results => {
+            accessor.shared.handleSuccess(response, replace).then(response => {
               stopLoader(loadSlug)
-              resolve(results)
+              resolve(response)
             }).catch(error => {
               stopLoader(loadSlug)
               reject(error)
@@ -914,7 +904,7 @@ export default class Endpoint {
             if (create) {
               accessor.create(apiSlug, args, replace).then(response => {
                 stopLoader(loadSlug)
-                resolve(results)
+                resolve(response)
               }).catch(error => {
                 stopLoader(loadSlug)
                 reject(error)
@@ -924,7 +914,9 @@ export default class Endpoint {
               reject(error)
             }
           })
-        }).catch(error => {})
+        }).catch(error => {
+          console.error(error)
+        })
       }
     }
 
@@ -938,7 +930,7 @@ export default class Endpoint {
       save = true,
       map = accessor.shared.map
     ) => {
-      if (map !== null && typeof map.multiple !== null && map.multiple) {
+      if (map !== null && typeof map.multiple !== 'undefined' && map.multiple) {
         return accessor.batch({ save: save }, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
@@ -964,7 +956,9 @@ export default class Endpoint {
             stopLoader(loadSlug)
             reject(error)
           })
-        }).catch(error => {})
+        }).catch(error => {
+          console.error(error)
+        })
       }
     }
 
@@ -977,7 +971,7 @@ export default class Endpoint {
       replace = true,
       map = accessor.shared.map
     ) => {
-      if (map !== null && typeof map.multiple !== null && map.multiple) {
+      if (map !== null && typeof map.multiple !== 'undefined' && map.multiple) {
         return accessor.batch({ save: false, create: false, delete: true }, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
@@ -1000,7 +994,9 @@ export default class Endpoint {
             stopLoader(loadSlug)
             reject(error)
           })
-        }).catch(error => {})
+        }).catch(error => {
+          console.error(error)
+        })
       }
     }
 
@@ -1031,7 +1027,9 @@ export default class Endpoint {
           stopLoader(loadSlug)
           reject(error)
         })
-      }).catch(error => {})
+      }).catch(error => {
+        console.error(error)
+      })
     }
 
     /**
@@ -1045,7 +1043,6 @@ export default class Endpoint {
         merge: true // Merge with parent props if any (usually there is none)
       }, options)
       let data = {}
-      let hook = 'create'
       // Handle create
       if (options.create) {
         let hook = (map !== null && typeof map.batch !== 'undefined' && typeof map.batch.create !== 'undefined') ? map.batch.create : 'create'
@@ -1157,7 +1154,9 @@ export default class Endpoint {
           stopLoader(loadSlug)
           reject(error)
         })
-      }).catch(error => {})
+      }).catch(error => {
+        console.error(error)
+      })
     }
 
     /**
@@ -1506,7 +1505,7 @@ export default class Endpoint {
      * Clone Endpoint
      */
     accessor.clone = (change = true) => {
-      let clone = new Endpoint(endpoint, controller, accessor.shared.defaultApi, predefined)
+      let clone = new Endpoint(accessor.shared.endpoint, accessor.shared.controller, accessor.shared.defaultApi, predefined)
       clone.raw = JSON.parse(JSON.stringify(accessor.raw))
       clone.set(accessor, change)
       accessor.children.forEach(child => {
@@ -1548,7 +1547,7 @@ export default class Endpoint {
     /**
      * Remove Identifiers before making request. Takes raw only, not references
      */
-    accessor.removeIdentifiers = (props, endpoint = endpoint, map = accessor.shared.map) => {
+    accessor.removeIdentifiers = (props, endpoint = accessor.shared.endpoint, map = accessor.shared.map) => {
       let path = map !== null ? map.endpoint : endpoint
       let identifiers = accessor.identifiers(path)
       Object.keys(props).forEach(key => {
@@ -1586,7 +1585,5 @@ export default class Endpoint {
       }
       return identifiers
     }
-
   }
-
 }
