@@ -12,9 +12,9 @@
   ],
   "requester": "oauth",
   "config": {
-    "type": "oauth_1.0a",
-    "version": "1.0",
-    "encryption": "HMAC-SHA1",
+    "authentication": "oauth",
+    "version": "1.0a",
+    "type": "one_legged",
     "addDataToQuery": true,
     "addAuthHeaders": false,
     "dualAuth": false,

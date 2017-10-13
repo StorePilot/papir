@@ -8,8 +8,9 @@ class Sign {
 
     this.gen = (opt) => {
       let conf = {
-        type: 'oauth_1.0a',
-        version:'1.0',
+        authentication: 'oauth',
+        version: '1.0a',
+        type: "one_legged",
         algorithm: 'HMAC-SHA1',
         url: location.href,
         method: 'GET',
@@ -43,7 +44,7 @@ class Sign {
         })
       })
 
-      if (conf.type === 'oauth_1.0a') {
+      if (conf.authentication === 'oauth' && conf.version === '1.0a') {
         mergedParams.concat([
           {
             key: 'oauth_consumer_key',
@@ -67,7 +68,7 @@ class Sign {
           },
           {
             key: 'oauth_version',
-            value: conf.version
+            value: '1.0'
           }
         ])
 

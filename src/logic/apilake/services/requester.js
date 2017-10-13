@@ -11,8 +11,9 @@ export default class Requester {
     this.conf = {
       addDataToQuery: true,
       dualAuth: false,
-      type: 'oauth_1.0a',
-      version: '1.0',
+      authentication: 'oauth',
+      version: '1.0a',
+      type: 'one_legged',
       algorithm: 'HMAC-SHA1',
       key: '',
       secret: '',

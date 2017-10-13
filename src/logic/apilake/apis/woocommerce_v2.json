@@ -3,7 +3,7 @@
   "slug": "wc",
   "default": true,
   "base": "",
-  "takes": [
+  "methods": [
     "GET",
     "POST",
     "PUT",
@@ -12,8 +12,9 @@
   ],
   "requester": "oauth",
   "config": {
-    "type": "oauth_1.0a",
-    "version": "1.0",
+    "authentication": "oauth",
+    "version": "1.0a",
+    "type": "one_legged",
     "encryption": "HMAC-SHA1",
     "addDataToQuery": true,
     "addAuthHeaders": false,
