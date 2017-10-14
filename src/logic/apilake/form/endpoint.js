@@ -107,7 +107,7 @@ export default class Endpoint {
      * ---------------
      * Initialization
      */
-    let init = () => {
+    let init = (accessor = this) => {
       /**
        * Map Resolver
        */
@@ -131,7 +131,6 @@ export default class Endpoint {
         accessor.shared.controller = null
       }
     }
-    init() // Run at Construction
 
     /**
      * Shared Methods
@@ -141,7 +140,7 @@ export default class Endpoint {
      * Build mapped / predefined properties
      */
     accessor.shared.buildProps = (map = accessor.shared.map, predefined = accessor.shared.predefined) => {
-      if (map !== null && typeof map.props !== 'undefined') {
+      if (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined') {
         try {
           Object.keys(map.props).forEach(key => {
             if (!accessor.reserved(key)) {
@@ -173,7 +172,7 @@ export default class Endpoint {
         console.error('Error in predefined properties')
         console.error(predefined)
       }
-      if (map !== null && typeof map.identifier !== 'undefined') {
+      if (map !== null && typeof map !== 'undefined' && typeof map.identifier !== 'undefined') {
         let mappedIdentifier = map.identifier
         if (map.props[map.identifier] !== 'undefined') {
           mappedIdentifier = map.props[map.identifier]
@@ -203,7 +202,7 @@ export default class Endpoint {
       }
       let path = endpoint
       // If mapping is set
-      if (map !== null) {
+      if (map !== null && typeof map !== 'undefined') {
         path = map.endpoint
         // Add slash to path if missing
         if (path.length > 0 && path[0] !== '/') {
@@ -216,7 +215,7 @@ export default class Endpoint {
         let slash = identifiers[key].slash
         let hook = identifiers[key].hook
         // Resolve mapping
-        if (map !== null && typeof map.props !== 'undefined') {
+        if (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined') {
           key = typeof map.props[key] !== 'undefined' ? map.props[key] : key
         }
         // Replace hook with value from mapped prop
@@ -294,7 +293,7 @@ export default class Endpoint {
           if (!batch && !multiple) {
             // Parse Data
             response = accessor.set(parsed, false, true, key)
-          } else if (batch && map !== null) {
+          } else if (batch && map !== null && typeof map !== 'undefined') {
             // Exchange all without delete
             parsed.forEach(method => {
               if (
@@ -312,7 +311,7 @@ export default class Endpoint {
                 })
               }
             })
-          } else if (multiple && map !== null) {
+          } else if (multiple && map !== null && typeof map !== 'undefined') {
             parsed.forEach(child => {
               let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, child)
               accessor.shared.exchange(endpoint)
@@ -323,6 +322,7 @@ export default class Endpoint {
             Object.keys(headers).forEach(key => {
               if (
                 map !== null &&
+                typeof map !== 'undefined' &&
                 typeof map.headers !== 'undefined' &&
                 typeof map.headers[key] !== 'undefined'
               ) {
@@ -379,7 +379,7 @@ export default class Endpoint {
      * Handle Request Success Response
      */
     accessor.shared.handleSuccess = (response, replace = true, key = null, batch = false, map = accessor.shared.map) => {
-      let multiple = (map !== null && typeof map.multiple !== 'undefined' && map.multiple)
+      let multiple = (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple)
       return new Promise((resolve, reject) => {
         if (replace) {
           accessor.shared.handleMapping(response, key, batch, multiple).then(results => {
@@ -474,7 +474,7 @@ export default class Endpoint {
       }
       // Resolve Creation Identifier
       let resolveCreationIdentifier = (endpoint) => {
-        if (map !== null && typeof map.creationIdentifier !== 'undefined') {
+        if (map !== null && typeof map !== 'undefined' && typeof map.creationIdentifier !== 'undefined') {
           let identifier = map.creationIdentifier
           let split = identifier.replace('=', '|=split=|').split('|=split=|')
           let prop = null
@@ -873,7 +873,7 @@ export default class Endpoint {
       create = true,
       map = accessor.shared.map
     ) => {
-      if (map !== null && typeof map.multiple !== 'undefined' && map.multiple) {
+      if (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) {
         return accessor.batch({ create: create }, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
@@ -928,7 +928,7 @@ export default class Endpoint {
       save = true,
       map = accessor.shared.map
     ) => {
-      if (map !== null && typeof map.multiple !== 'undefined' && map.multiple) {
+      if (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) {
         return accessor.batch({ save: save }, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
@@ -969,7 +969,7 @@ export default class Endpoint {
       replace = true,
       map = accessor.shared.map
     ) => {
-      if (map !== null && typeof map.multiple !== 'undefined' && map.multiple) {
+      if (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) {
         return accessor.batch({ save: false, create: false, delete: true }, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
@@ -1043,12 +1043,12 @@ export default class Endpoint {
       let data = {}
       // Handle create
       if (options.create) {
-        let hook = (map !== null && typeof map.batch !== 'undefined' && typeof map.batch.create !== 'undefined') ? map.batch.create : 'create'
+        let hook = (map !== null && typeof map !== 'undefined' && typeof map.batch !== 'undefined' && typeof map.batch.create !== 'undefined') ? map.batch.create : 'create'
         data[hook] = []
         accessor.children.forEach(child => {
           // Create Creation Identifier
           if (child.identifier === null || child.identifier.value === null) {
-            if (map !== null && typeof map.creationIdentifier !== 'undefined') {
+            if (map !== null && typeof map !== 'undefined' && typeof map.creationIdentifier !== 'undefined') {
               let identifier = map.creationIdentifier
               let split = identifier.replace('=', '|=split=|').split('|=split=|')
               let prop = split[0]
@@ -1092,7 +1092,7 @@ export default class Endpoint {
       }
       // Handle save
       if (options.save) {
-        let hook = (map !== null && typeof map.batch !== 'undefined' && typeof map.batch.save !== 'undefined') ? map.batch.save : 'save'
+        let hook = (map !== null && typeof map !== 'undefined' && typeof map.batch !== 'undefined' && typeof map.batch.save !== 'undefined') ? map.batch.save : 'save'
         data[hook] = []
         accessor.children.forEach(child => {
           if (child.identifier !== null && child.identifier.value !== null) {
@@ -1108,7 +1108,7 @@ export default class Endpoint {
       }
       // Handle delete
       if (options.delete) {
-        let hook = (map !== null && typeof map.batch !== 'undefined' && typeof map.batch.delete !== 'undefined') ? map.batch.delete : 'delete'
+        let hook = (map !== null && typeof map !== 'undefined' && typeof map.batch !== 'undefined' && typeof map.batch.delete !== 'undefined') ? map.batch.delete : 'delete'
         data[hook] = []
         accessor.children.forEach(child => {
           if (child.identifier !== null && child.identifier.value !== null) {
@@ -1385,7 +1385,7 @@ export default class Endpoint {
             })
           }
         } else {
-          prop = (map !== null && typeof map.props !== 'undefined' && typeof map.props[key] !== 'undefined') ? map.props[key] : key
+          prop = (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined' && typeof map.props[key] !== 'undefined') ? map.props[key] : key
           if (updateKey === null || prop === updateKey) {
             if (accessor.reserved(prop)) {
               hook = accessor.invalids
@@ -1526,7 +1526,7 @@ export default class Endpoint {
         } else {
           reverse = JSON.parse(JSON.stringify(props))
         }
-        if (map !== null && typeof map.props !== 'undefined') {
+        if (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined') {
           // Replace keys in props with mappings
           Object.keys(map.props).forEach(key => {
             if (typeof reverse[map.props[key]] !== 'undefined') {
@@ -1546,7 +1546,7 @@ export default class Endpoint {
      * Remove Identifiers before making request. Takes raw only, not references
      */
     accessor.removeIdentifiers = (props, endpoint = accessor.shared.endpoint, map = accessor.shared.map) => {
-      let path = map !== null ? map.endpoint : endpoint
+      let path = (map !== null && typeof map !== 'undefined') ? map.endpoint : endpoint
       let identifiers = accessor.identifiers(path)
       Object.keys(props).forEach(key => {
         if (typeof identifiers[key] !== 'undefined') {
@@ -1583,5 +1583,6 @@ export default class Endpoint {
       }
       return identifiers
     }
+    init() // Run at Construction
   }
 }

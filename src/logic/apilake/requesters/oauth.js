@@ -2,14 +2,13 @@ import qs from 'qs'
 import sign from '../services/sign'
 import util from '../services/util'
 import Requester from '../services/requester'
+import axios from 'axios'
 
 /**
  * OauthRequester
  */
 export default class RequesterOauth extends Requester {
-
   constructor (customConf = {}) {
-
     customConf = Object.assign({
       addAuthHeaders: false,
       dualAuth: false,
@@ -59,7 +58,7 @@ export default class RequesterOauth extends Requester {
         request.headers['Authorization'] = signGen.header
       }
 
-      request = this.makeTale(request, config)
+      request = this.makeTale(request, conf)
       request = this.makeAbortable(request, abortPromise)
       request.responseType = conf.responseType
       request.transformResponse = (response) => {
@@ -125,7 +124,7 @@ export default class RequesterOauth extends Requester {
     }
 
     this.getTokenAccess = (url, requestToken, requestTokenSecret, verifierToken) => {
-      let url = url + '?oauth_verifier=' + verifierToken
+      url = url + '?oauth_verifier=' + verifierToken
       let scope = this
       let conf = JSON.parse(JSON.stringify(this.getConf))
       conf.addDataToQuery = false
@@ -140,7 +139,5 @@ export default class RequesterOauth extends Requester {
         })
       })
     }
-
   }
-
 }

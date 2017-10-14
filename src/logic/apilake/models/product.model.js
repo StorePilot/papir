@@ -5,9 +5,7 @@ import Prop from '../prop'
  * Product
  */
 export default class Product extends Endpoint {
-
   constructor (controller, id = null, api = controller.default) {
-
     /**
      * Pass to Endpoint model
      */
@@ -18,7 +16,5 @@ export default class Product extends Endpoint {
      */
     this.id = new Prop(this, 'id', id)
     this.description = new Prop(this, 'description')
-
   }
-
 }

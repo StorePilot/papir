@@ -508,7 +508,7 @@
     name: 'shell',
     data () {
       return {
-        endpointRequester: null,
+        ep: null,
         apis: [],
         activeTab: 'api',
         step: 1,
@@ -601,9 +601,8 @@
     },
     computed: {
       url () {
-        if (this.endpointRequester !== null) {
-          console.log(this.endpointRequester)
-          return this.endpointRequester.shared.resolveUrl()
+        if (this.ep !== null) {
+          return this.ep.shared.resolveUrl()
         } else {
           return (this.api.base + this.endpoint.endpoint)
         }
@@ -672,7 +671,7 @@
         } else {
           api.requester = new this.$al.Requester(api.config)
         }
-        this.endpointRequester = new this.$al.Endpoint(this.endpoint.endpoint, controller)
+        this.ep = new this.$al.Endpoint(this.endpoint.endpoint, controller)
       },
       'api.config.authentication' (value) {
         this.api.requester = value

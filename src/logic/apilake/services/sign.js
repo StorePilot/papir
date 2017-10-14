@@ -2,7 +2,6 @@ import crypto from 'crypto'
 import util from './util'
 
 class Sign {
-
   constructor () {
     let scope = this
 
@@ -10,7 +9,7 @@ class Sign {
       let conf = {
         authentication: 'oauth',
         version: '1.0a',
-        type: "one_legged",
+        type: 'one_legged',
         algorithm: 'HMAC-SHA1',
         url: location.href,
         method: 'GET',
@@ -144,7 +143,7 @@ class Sign {
       }
     }
 
-    this.paramString = (params, emptyParams = false, sort = true, indexArrays  = true) => {
+    this.paramString = (params, emptyParams = false, sort = true, indexArrays = true) => {
       params.forEach((param) => {
         param.key = scope.decode(param.key)
         param.value = scope.decode(param.value)
@@ -170,12 +169,12 @@ class Sign {
         let p = param.split('=')
         if (p.length === 2) {
           dec.push({
-            key: decode(p[0]),
-            value: decode(p[1]).replace(/&/g, '%26').slice(0, -3) // 'keep & decoded as its a key character'
+            key: this.decode(p[0]),
+            value: this.decode(p[1]).replace(/&/g, '%26').slice(0, -3) // 'keep & decoded as its a key character'
           })
         } else {
           dec.push({
-            key: decode(p[0]),
+            key: this.decode(p[0]),
             value: ''
           })
         }
@@ -252,9 +251,7 @@ class Sign {
       }
       return params
     }
-
   }
-
 }
 
 export default new Sign()
