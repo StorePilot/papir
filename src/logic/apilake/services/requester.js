@@ -1,5 +1,5 @@
 import util from './util'
-import { axios, CancelToken } from 'axios'
+import axios from 'axios'
 import qs from 'qs'
 
 /**
@@ -218,7 +218,7 @@ export default class Requester {
       }
 
       if (conf.perform) {
-        return axios(request)
+        return axios.request(request)
       } else {
         // Transform to request as thats what caller expects
         return new Promise(resolve => {
@@ -298,7 +298,7 @@ export default class Requester {
 
     this.makeAbortable = (request, promise) => {
       let cancel
-      request.cancelToken = new CancelToken(function executor (c) {
+      request.cancelToken = new axios.CancelToken(function executor (c) {
         cancel = c
       })
       promise.then(() => {

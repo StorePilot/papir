@@ -773,7 +773,7 @@
               })
               break
             case 'CREATE':
-              endpoint.create(apiSlug, args, replace, create, save, perform).then(config => {
+              endpoint.create(apiSlug, args, replace, save, perform).then(config => {
                 this.request = config
               })
               break

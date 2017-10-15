@@ -46,6 +46,7 @@ export default class Endpoint {
         'custom',
         'save',
         'create',
+        'batch',
         'clear',
         'upload',
         'remove',
@@ -53,6 +54,7 @@ export default class Endpoint {
         'get',
         'post',
         'put',
+        'patch',
         'delete',
         'head',
         'trace',
@@ -911,7 +913,7 @@ export default class Endpoint {
           }).catch(error => {
             // If could not save, try create
             if (create) {
-              accessor.create(apiSlug, args, replace).then(response => {
+              accessor.create(apiSlug, args, replace, true, perform).then(response => {
                 stopLoader(loadSlug)
                 resolve(response)
               }).catch(error => {
@@ -941,7 +943,7 @@ export default class Endpoint {
       map = accessor.shared.map
     ) => {
       if (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) {
-        return accessor.batch({ save: save }, apiSlug, args, replace, map)
+        return accessor.batch({ save: save }, apiSlug, args, replace, perform, map)
       } else {
         return new Promise((resolve, reject) => {
           let loadSlug = 'create'

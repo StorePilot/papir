@@ -67,7 +67,7 @@ export default class RequesterOauth extends Requester {
       }
 
       if (conf.perform) {
-        return axios(request)
+        return axios.request(request)
       } else {
         // Transform to request as thats what caller expects
         return new Promise(resolve => {
