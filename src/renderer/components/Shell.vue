@@ -688,14 +688,16 @@
     },
     created () {
       this.apis.push(this.api)
+      let ep = this.genEndpoint(this.config)
+      this.genRequest(this.method, ep)
     },
     watch: {
-      method (val) {
+      method () {
         let ep = this.genEndpoint(this.config)
-        this.genRequest(val, ep)
+        this.genRequest(this.method, ep)
       },
-      config (val) {
-        let ep = this.genEndpoint(val)
+      config () {
+        let ep = this.genEndpoint(this.config)
         this.genRequest(this.method, ep)
       },
       'api.config.authentication' (value) {

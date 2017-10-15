@@ -793,12 +793,12 @@ export default class Endpoint {
       data = null,
       upload = false,
       conf = {},
-      promise = new Promise()
+      promise = new Promise(resolve => resolve())
     ) => {
       if (canceler !== false) {
         let cancelHandler = accessor.shared.handleCancellation(cancelers[canceler])
         cancelers[canceler] = cancelHandler.cancellation
-        promise = cancelHandler.cancellation
+        promise = cancelHandler.promise
       }
       return new Promise((resolve, reject) => {
         startLoader(method)
@@ -1207,7 +1207,7 @@ export default class Endpoint {
       data = null,
       args = null,
       upload = false,
-      promise = new Promise(),
+      promise = new Promise(resolve => resolve()),
       conf = {}
     ) => {
       return accessor.shared.makeRequest(
@@ -1230,7 +1230,7 @@ export default class Endpoint {
       data = null,
       args = null,
       upload = false,
-      promise = new Promise(),
+      promise = new Promise(resolve => resolve()),
       conf = {}
     ) => {
       return accessor.shared.makeRequest(
@@ -1253,7 +1253,7 @@ export default class Endpoint {
       data = null,
       args = null,
       upload = false,
-      promise = new Promise(),
+      promise = new Promise(resolve => resolve()),
       conf = {}
     ) => {
       return accessor.shared.makeRequest(
@@ -1276,7 +1276,7 @@ export default class Endpoint {
       data = null,
       args = null,
       upload = false,
-      promise = new Promise(),
+      promise = new Promise(resolve => resolve()),
       conf = {}
     ) => {
       return accessor.shared.makeRequest(
@@ -1299,7 +1299,7 @@ export default class Endpoint {
       data = null,
       args = null,
       upload = false,
-      promise = new Promise(),
+      promise = new Promise(resolve => resolve()),
       conf = {}
     ) => {
       return accessor.shared.makeRequest(
@@ -1322,7 +1322,7 @@ export default class Endpoint {
       data = null,
       args = null,
       upload = false,
-      promise = new Promise(),
+      promise = new Promise(resolve => resolve()),
       conf = {}
     ) => {
       return accessor.shared.makeRequest(
@@ -1345,7 +1345,7 @@ export default class Endpoint {
       data = null,
       args = null,
       upload = false,
-      promise = new Promise(),
+      promise = new Promise(resolve => resolve()),
       conf = {}
     ) => {
       return accessor.shared.makeRequest(
@@ -1368,7 +1368,7 @@ export default class Endpoint {
       data = null,
       args = null,
       upload = false,
-      promise = new Promise(),
+      promise = new Promise(resolve => resolve()),
       conf = {}
     ) => {
       return accessor.shared.makeRequest(
@@ -1391,7 +1391,7 @@ export default class Endpoint {
       data = null,
       args = null,
       upload = false,
-      promise = new Promise(),
+      promise = new Promise(resolve => resolve()),
       conf = {}
     ) => {
       return accessor.shared.makeRequest(
