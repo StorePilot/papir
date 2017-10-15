@@ -802,7 +802,7 @@ export default class Endpoint {
       }
       return new Promise((resolve, reject) => {
         startLoader(method)
-        let api = accessor.shared.controller !== null ? accessor.shared.controller.apis[apiSlug] : accessor.shared.api
+        let api = (accessor.shared.controller !== null && apiSlug !== null) ? accessor.shared.controller.apis[apiSlug] : accessor.shared.api
         accessor.shared.requester[method.toLowerCase()](accessor.shared.resolveUrl(endpoint, accessor.shared.map, api, args), promise, data, upload, conf).then(response => {
           accessor.raw = response
           stopLoader(method)
@@ -832,7 +832,8 @@ export default class Endpoint {
     accessor.fetch = (
       apiSlug = accessor.shared.defaultApi,
       args = null,
-      replace = true
+      replace = true,
+      perform = true
     ) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'fetch'
@@ -841,7 +842,12 @@ export default class Endpoint {
           loadSlug,
           'GET',
           apiSlug,
-          args
+          args,
+          null,
+          false,
+          {
+            perform: perform
+          }
         ).then(response => {
           accessor.shared.handleSuccess(response, replace).then(results => {
             stopLoader(loadSlug)
@@ -871,6 +877,7 @@ export default class Endpoint {
       args = null,
       replace = true,
       create = true,
+      perform = true,
       map = accessor.shared.map
     ) => {
       if (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) {
@@ -888,7 +895,11 @@ export default class Endpoint {
               accessor.reverseMapping(
                 accessor.changes()
               )
-            )
+            ),
+            false,
+            {
+              perform: perform
+            }
           ).then(response => {
             accessor.shared.handleSuccess(response, replace).then(response => {
               stopLoader(loadSlug)
@@ -926,6 +937,7 @@ export default class Endpoint {
       args = null,
       replace = true,
       save = true,
+      perform = true,
       map = accessor.shared.map
     ) => {
       if (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) {
@@ -941,7 +953,11 @@ export default class Endpoint {
             args,
             accessor.removeIdentifiers(
               accessor.reverseMapping()
-            )
+            ),
+            false,
+            {
+              perform: perform
+            }
           ).then(response => {
             accessor.shared.handleSuccess(response, replace).then(results => {
               stopLoader(loadSlug)
@@ -967,6 +983,7 @@ export default class Endpoint {
       apiSlug = accessor.shared.defaultApi,
       args = null,
       replace = true,
+      perform = true,
       map = accessor.shared.map
     ) => {
       if (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) {
@@ -979,7 +996,12 @@ export default class Endpoint {
             loadSlug,
             'DELETE',
             apiSlug,
-            args
+            args,
+            null,
+            false,
+            {
+              perform: perform
+            }
           ).then(response => {
             accessor.shared.handleSuccess(response, replace).then(results => {
               stopLoader(loadSlug)
@@ -1002,7 +1024,13 @@ export default class Endpoint {
      * Request Upload @note - Related to Properties
      * @note: batch upload not yet supported
      */
-    accessor.upload = (file, apiSlug = accessor.shared.defaultApi, args = null, replace = true) => {
+    accessor.upload = (
+      file,
+      apiSlug = accessor.shared.defaultApi,
+      args = null,
+      replace = true,
+      perform = true
+    ) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'upload'
         startLoader(loadSlug)
@@ -1012,7 +1040,10 @@ export default class Endpoint {
           apiSlug,
           args,
           file,
-          true
+          true,
+          {
+            perform: perform
+          }
         ).then(response => {
           accessor.shared.handleSuccess(response, replace).then(results => {
             stopLoader(loadSlug)
@@ -1033,7 +1064,14 @@ export default class Endpoint {
     /**
      * Request Batch @note - Updates all children
      */
-    accessor.batch = (options = {}, apiSlug = accessor.shared.defaultApi, args = null, replace = true, map = accessor.shared.map) => {
+    accessor.batch = (
+      options = {},
+      apiSlug = accessor.shared.defaultApi,
+      args = null,
+      replace = true,
+      perform = true,
+      map = accessor.shared.map
+    ) => {
       options = Object.assign({
         create: true,
         save: true,
@@ -1139,7 +1177,11 @@ export default class Endpoint {
           'POST',
           apiSlug,
           args,
-          data
+          data,
+          false,
+          {
+            perform: perform
+          }
         ).then(response => {
           accessor.shared.handleSuccess(response, replace, null, true).then(results => {
             stopLoader(loadSlug)

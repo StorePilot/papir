@@ -408,12 +408,43 @@
             <div slot="header" class="clearfix">
               <span style="line-height: 36px;">Request</span>
               <el-button style="float: right" type="warning">Fire</el-button>
+              <el-select
+                v-model="method"
+                style="float: right; width: 150px; margin-right: 10px;"
+                placeholder="Method">
+                <el-option
+                  v-for="method in api.methods"
+                  :key="method"
+                  :label="method"
+                  :value="method">
+                </el-option>
+                <el-option
+                  label="FETCH"
+                  value="FETCH">
+                </el-option>
+                <el-option
+                  label="SAVE"
+                  value="SAVE">
+                </el-option>
+                <el-option
+                  label="CREATE"
+                  value="CREATE">
+                </el-option>
+                <el-option
+                  label="REMOVE"
+                  value="REMOVE">
+                </el-option>
+                <el-option
+                  label="UPLOAD"
+                  value="UPLOAD">
+                </el-option>
+                <el-option
+                  label="BATCH"
+                  value="BATCH">
+                </el-option>
+              </el-select>
             </div>
-            <b>Url:</b> {{api.base + endpoint.endpoint}}
-            <h5>Method</h5>
-            <h5>Headers</h5>
-            <h5>Query Params</h5>
-            <h5>Data</h5>
+            <pre>{{request}}</pre>
           </el-card>
         </el-col>
         <el-col :sm="24" :lg="12">
@@ -508,6 +539,9 @@
     name: 'shell',
     data () {
       return {
+        file: null,
+        request: {},
+        method: 'GET',
         ep: null,
         apis: [],
         activeTab: 'api',
@@ -570,7 +604,8 @@
             taleNonce: '_wpnonce=wcApiSettings.nonce',
             put: {
               dualAuth: true
-            }
+            },
+            perform: false // Get axios config instead of making request
           },
           dataType: '',
           charset: '',
@@ -655,23 +690,13 @@
       this.apis.push(this.api)
     },
     watch: {
+      method (val) {
+        let ep = this.genEndpoint(this.config)
+        this.genRequest(val, ep)
+      },
       config (val) {
-        let api = JSON.parse(JSON.stringify(val))
-        console.log(this.$al)
-        let controller = this.$al.controller
-        controller.apis[api.slug] = api
-        if (api.default || controller.default === null) {
-          controller.default = api.slug
-        }
-        if (
-          typeof api.requester !== 'undefined' &&
-          typeof controller.requesters[api.requester] !== 'undefined'
-        ) {
-          api.requester = new controller.requesters[api.requester](api.config)
-        } else {
-          api.requester = new this.$al.Requester(api.config)
-        }
-        this.ep = new this.$al.Endpoint(this.endpoint.endpoint, controller)
+        let ep = this.genEndpoint(val)
+        this.genRequest(this.method, ep)
       },
       'api.config.authentication' (value) {
         this.api.requester = value
@@ -718,6 +743,78 @@
       }
     },
     methods: {
+      genRequest (method, endpoint) {
+        let apiSlug = null
+        let args = null
+        let replace = false
+        let perform = false
+        let create = true
+        let save = true // Enables 'save' in batch
+        let file = this.file
+        let options = {} // Batch options to enable / disable save, create, delete
+        let data = {}
+        let upload = false
+        let promise = new Promise(resolve => {
+          resolve()
+        })
+        let conf = {}
+        if (endpoint !== null) {
+          switch (method) {
+            case 'FETCH':
+              endpoint.fetch(apiSlug, args, replace, perform).then(config => {
+                this.request = config
+              })
+              break
+            case 'SAVE':
+              endpoint.save(apiSlug, args, replace, create, perform).then(config => {
+                this.request = config
+              })
+              break
+            case 'CREATE':
+              endpoint.create(apiSlug, args, replace, create, save, perform).then(config => {
+                this.request = config
+              })
+              break
+            case 'REMOVE':
+              endpoint.remove(apiSlug, args, replace, perform).then(config => {
+                this.request = config
+              })
+              break
+            case 'UPLOAD':
+              endpoint.upload(file, apiSlug, args, replace, perform).then(config => {
+                this.request = config
+              })
+              break
+            case 'BATCH':
+              endpoint.batch(options, apiSlug, args, replace, perform).then(config => {
+                this.request = config
+              })
+              break
+            default:
+              endpoint[method.toLowerCase()](apiSlug, data, args, upload, promise, conf).then(config => {
+                this.request = config
+              })
+              break
+          }
+        }
+      },
+      genEndpoint (val) {
+        let api = JSON.parse(JSON.stringify(val))
+        let controller = this.$al.controller
+        controller.apis[api.slug] = api
+        if (api.default || controller.default === null) {
+          controller.default = api.slug
+        }
+        if (
+          typeof api.requester !== 'undefined' &&
+          typeof controller.requesters[api.requester] !== 'undefined'
+        ) {
+          api.requester = new controller.requesters[api.requester](api.config)
+        } else {
+          api.requester = new this.$al.Requester(api.config)
+        }
+        return (this.ep = new this.$al.Endpoint(this.endpoint.endpoint, controller))
+      }
     }
   }
 </script>

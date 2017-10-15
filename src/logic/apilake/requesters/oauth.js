@@ -31,7 +31,8 @@ export default class RequesterOauth extends Requester {
     ) => {
       let request = {
         url: url,
-        method: method
+        method: method,
+        headers: {}
       }
       conf = JSON.parse(JSON.stringify(conf))
       let dualAuth = conf.dualAuth
@@ -65,7 +66,14 @@ export default class RequesterOauth extends Requester {
         return response
       }
 
-      return axios(request)
+      if (conf.perform) {
+        return axios(request)
+      } else {
+        // Transform to request as thats what caller expects
+        return new Promise(resolve => {
+          resolve(request)
+        })
+      }
     }
 
     this.makeDataDualAuth = (request, data, indexArrays = true, conf = this.conf) => {

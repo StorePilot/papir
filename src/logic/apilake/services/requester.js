@@ -40,7 +40,8 @@ export default class Requester {
       head: {},
       trace: {},
       connect: {},
-      options: {}
+      options: {},
+      perform: true // If false, axios config will be returned instead
     }
 
     this.deepClone = (obj = {}) => {
@@ -192,7 +193,8 @@ export default class Requester {
     ) => {
       let request = {
         url: url,
-        method: method
+        method: method,
+        headers: {}
       }
       conf = JSON.parse(JSON.stringify(conf))
       let indexArrays = conf.indexArrays
@@ -215,14 +217,21 @@ export default class Requester {
         return response
       }
 
-      return axios(request)
+      if (conf.perform) {
+        return axios(request)
+      } else {
+        // Transform to request as thats what caller expects
+        return new Promise(resolve => {
+          resolve(request)
+        })
+      }
     }
 
     this.makeDataQuery = (request, data, indexArrays = true) => {
       if (request.url.indexOf('?') !== -1) {
-        request.url += '&' + qs.stringify(JSON.parse(data))
+        request.url += '&' + qs.stringify(data)
       } else {
-        request.url += '?' + qs.stringify(JSON.parse(data))
+        request.url += '?' + qs.stringify(data)
       }
       if (indexArrays) {
         request.url = util.indexArrayQuery(request.url)
