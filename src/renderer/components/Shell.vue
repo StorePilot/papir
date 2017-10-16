@@ -436,6 +436,13 @@
             <div slot="header" class="clearfix">
               <span style="line-height: 36px;">Request</span>
               <el-button
+                  style="margin-left: 10px;"
+                  @click="open()"
+                  size="mini"
+                  type="info">
+                Go to URL
+              </el-button>
+              <el-button
                 @click="fire()"
                 style="float: right"
                 type="warning">
@@ -725,6 +732,14 @@
       this.genRequest(this.method, ep)
     },
     watch: {
+      api () {
+        let ep = this.genEndpoint(this.config)
+        this.genRequest(this.method, ep)
+      },
+      endpoint () {
+        let ep = this.genEndpoint(this.config)
+        this.genRequest(this.method, ep)
+      },
       method () {
         let ep = this.genEndpoint(this.config)
         this.genRequest(this.method, ep)
@@ -779,6 +794,9 @@
       }
     },
     methods: {
+      open () {
+        window.open(this.request.url)
+      },
       save () {
         localStorage.setItem('papir.apis', JSON.stringify(this.apis))
       },
