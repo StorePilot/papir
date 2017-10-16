@@ -282,7 +282,7 @@
             </el-switch>
           </el-col>
           <el-col :lg="12" style="padding: 10px;">
-            <h3>Custom Arguments</h3>
+            <h3>Custom Arguments (Per Endpoint)</h3>
             <div class="el-table">
               <table style="width: 100%; text-align: left">
                 <tr>
@@ -290,7 +290,7 @@
                   <th>Value</th>
                   <th>Delete</th>
                 </tr>
-                <tr v-for="(arg, index) in args">
+                <tr v-for="(arg, index) in endpoint.params">
                   <td>
                     <el-input v-model="arg.key"></el-input>
                   </td>
@@ -298,12 +298,14 @@
                     <el-input v-model="arg.value"></el-input>
                   </td>
                   <td>
-                    <el-button style="margin-bottom: 20px" @click="args.splice(index, 1)">Clear</el-button>
+                    <el-button style="margin-bottom: 20px" @click="endpoint.params.splice(index, 1)">Clear</el-button>
                   </td>
                 </tr>
               </table>
             </div>
-            <el-button style="margin-top: 10px;" @click="args.push({ key: '', value: '' })">Add</el-button>
+            <el-button
+                style="margin-top: 10px;"
+                @click="endpoint.params.push({ key: '', value: '' })">Add</el-button>
           </el-col>
         </el-tab-pane>
 
@@ -598,6 +600,7 @@
           endpoint: '',
           multiple: false,
           child: '',
+          params: [], // Custom params (key / value)
           args: [],
           batch: [
             {key: 'save', value: 'update'},
@@ -737,6 +740,9 @@
         this.genRequest(this.method, ep)
       },
       endpoint () {
+        if (typeof this.endpoint.params === 'undefined') {
+          this.endpoint.params = []
+        }
         let ep = this.genEndpoint(this.config)
         this.genRequest(this.method, ep)
       },
@@ -803,7 +809,17 @@
       load () {
         let apis = localStorage.getItem('papir.apis')
         if (apis !== null) {
-          this.apis = JSON.parse(apis)
+          let parsed = JSON.parse(apis)
+          // Fix config to work with papir debugger
+          parsed.forEach(api => {
+            api.mappings.forEach(map => {
+              if (typeof map.params === 'undefined') {
+                map.params = []
+              }
+            })
+          })
+          // Apply
+          this.apis = parsed
         } else {
           this.apis.push(JSON.parse(JSON.stringify(this.exampleApi)))
           this.apis[0].mappings.push(JSON.parse(JSON.stringify(this.exampleEndpoint)))
@@ -945,8 +961,8 @@
         } else {
           api.requester = new this.$al.Requester(api.config)
         }
-        let endpoint = this.endpoint === null ? '' : this.endpoint.endpoint
-        return (this.ep = new this.$al.Endpoint(endpoint, controller))
+        let endpoint = this.endpoint === null ? '' : this.endpoint.name
+        return (this.ep = new this.$al.Endpoint(endpoint, controller, api.slug))
       }
     }
   }

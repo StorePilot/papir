@@ -117,7 +117,7 @@ export default class Endpoint {
         let map = null
         try {
           map = accessor.shared.api.mappings[accessor.shared.endpoint]
-        } catch (e) {}
+        } catch (e) { console.error(e) }
         return map
       }
       /**
@@ -230,6 +230,13 @@ export default class Endpoint {
         }
       })
       let url = base + path
+      if (map !== null && typeof map !== 'undefined' && typeof map.params !== 'undefined' && map.params.constructor === Array) {
+        if (args !== null) {
+          args = args.concat(map.params)
+        } else {
+          args = map.params
+        }
+      }
       // Add Query Arguments
       if (args !== null) {
         if (url.indexOf('?') === -1) {
@@ -244,7 +251,7 @@ export default class Endpoint {
           url = url.slice(0, -1)
         }
       }
-      return base + path
+      return url
     }
 
     /**
