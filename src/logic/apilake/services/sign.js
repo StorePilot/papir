@@ -200,7 +200,7 @@ class Sign {
       if (indexArrays) {
         url = util.indexArrayQuery(url)
       }
-      return encodeURIComponent(value)
+      return encodeURIComponent(url)
         .replace(/!/g, '%21')
         .replace(/\*/g, '%2A')
         .replace(/'/g, '%27')
