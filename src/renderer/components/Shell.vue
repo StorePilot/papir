@@ -3,16 +3,40 @@
     <el-col :sm="5" :lg="3" style="min-height: calc(100% - 36px);">
       <el-menu style="min-height: calc(100vh - 36px);" default-active="0" class="el-menu-vertical-demo" theme="dark">
         <h3 style="color: white; margin: 20px;">API's</h3>
-        <el-menu-item v-for="(api, index) in apis" :index="String(index)" :key="api.slug">
-          {{api.slug}}
+        <el-menu-item
+            @click="
+              api = _api;
+              (typeof _api.mappings !== 'undefined' && _api.mappings.length > 0) ? endpoint = _api.mappings[0] : endpoint = null"
+            v-for="(_api, index) in apis" :index="String(index)" :key="_api.slug">
+          {{_api.slug}}
+          <el-button style="float: right; margin-top: 16px;" v-if="apis.length > 1" size="mini" type="danger" @click="removeApi(index)">
+            Delete
+          </el-button>
+        </el-menu-item>
+        <el-menu-item index="none">
+          <el-button size="small" type="primary" @click="addApi">
+            Add API
+          </el-button>
         </el-menu-item>
       </el-menu>
     </el-col>
     <el-col :sm="5" :lg="3">
       <el-menu style="min-height: calc(100vh - 36px);" default-active="0" class="el-menu-vertical-demo">
         <h3 style="margin: 20px;">Endpoints</h3>
-        <el-menu-item v-for="(endpoint, index) in api.mappings" :index="String(index)" :key="endpoint.name">
-          {{endpoint.name}}
+        <el-menu-item
+            @click="endpoint = _endpoint"
+            v-for="(_endpoint, index) in api.mappings"
+            :index="String(index)"
+            :key="_endpoint.name">
+          {{_endpoint.name}}
+          <el-button style="float: right; margin-top: 16px;" size="mini" type="danger" @click="removeEndpoint(index)">
+            Delete
+          </el-button>
+        </el-menu-item>
+        <el-menu-item index="none">
+          <el-button size="small" type="primary" @click="addEndpoint">
+            Add Endpoint
+          </el-button>
         </el-menu-item>
       </el-menu>
     </el-col>
@@ -51,41 +75,43 @@
         </el-tab-pane>
 
         <el-tab-pane name="endpoint" label="Endpoint">
-          <el-col :lg="12" style="padding: 10px;">
-            <h3>Endpoint - Path</h3>
-            <el-input v-model="endpoint.endpoint" placeholder="/users{/id}"></el-input>
-            <h3>Identifier</h3>
-            <el-input v-model="endpoint.identifier" placeholder="Usually the id property"></el-input>
-            <h3>Creation Identifier</h3>
-            <el-input v-model="endpoint.creationIdentifier" placeholder="Usually the id property"></el-input>
-          </el-col>
-          <el-col :lg="12" style="padding: 10px;">
-            <h3>
-              Multiple
-              <span style="font-size: .7em">
-                Does the endpoint respond with single or multiple elements
-              </span>
-            </h3>
-            <el-switch
-                v-model="endpoint.multiple"
-                on-color="#13ce66"
-                off-color="#ff4949">
-            </el-switch>
-            <h3 v-show="endpoint.multiple">
-              Child
-              <span style="font-size: .7em">
-                If this endpoint has multiple elements, map to children endpoint
-              </span>
-            </h3>
-            <el-input
-                v-show="endpoint.multiple"
-                v-model="endpoint.child"
-                placeholder="Ex. if this EP is 'products' you can insert 'product'"></el-input>
-          </el-col>
+          <div v-if="endpoint!==null">
+            <el-col :lg="12" style="padding: 10px;">
+              <h3>Endpoint - Path</h3>
+              <el-input v-model="endpoint.endpoint" placeholder="/users{/id}"></el-input>
+              <h3>Identifier</h3>
+              <el-input v-model="endpoint.identifier" placeholder="Usually the id property"></el-input>
+              <h3>Creation Identifier</h3>
+              <el-input v-model="endpoint.creationIdentifier" placeholder="Usually the id property"></el-input>
+            </el-col>
+            <el-col :lg="12" style="padding: 10px;">
+              <h3>
+                Multiple
+                <span style="font-size: .7em">
+                  Does the endpoint respond with single or multiple elements
+                </span>
+              </h3>
+              <el-switch
+                  v-model="endpoint.multiple"
+                  on-color="#13ce66"
+                  off-color="#ff4949">
+              </el-switch>
+              <h3 v-show="endpoint.multiple">
+                Child
+                <span style="font-size: .7em">
+                  If this endpoint has multiple elements, map to children endpoint
+                </span>
+              </h3>
+              <el-input
+                  v-show="endpoint.multiple"
+                  v-model="endpoint.child"
+                  placeholder="Ex. if this EP is 'products' you can insert 'product'"></el-input>
+            </el-col>
+          </div>
         </el-tab-pane>
 
         <el-tab-pane name="mapping" label="Endpoint Mapping">
-          <el-col :lg="12" style="padding: 10px;">
+          <el-col :lg="12" style="padding: 10px;" v-if="endpoint !== null">
             <h3>Properties Mapping</h3>
             <div class="el-table">
               <table style="width: 100%; text-align: left">
@@ -131,7 +157,7 @@
             </div>
             <el-button style="margin-top: 10px;" @click="endpoint.headers.push({ key: '', value: '' })">Add</el-button>
           </el-col>
-          <el-col :lg="12" style="padding: 10px;">
+          <el-col :lg="12" style="padding: 10px;" v-if="endpoint !== null">
             <h3>Arguments Mapping</h3>
             <div class="el-table">
               <table style="width: 100%; text-align: left">
@@ -547,7 +573,6 @@
     name: 'shell',
     data () {
       return {
-        preflight: true,
         file: null,
         request: {},
         response: {},
@@ -556,8 +581,11 @@
         apis: [],
         activeTab: 'api',
         step: 1,
-        endpoint: {
-          // @note - args, batch, props, headers should be converted to object at export / fire
+        endpoint: null,
+        api: null,
+        args: [],
+        exampleEndpoint: {
+          name: 'example',
           endpoint: '',
           multiple: false,
           child: '',
@@ -572,9 +600,8 @@
           identifier: '',
           creationIdentifier: ''
         },
-        args: [],
-        api: {
-          base: 'http://localhost:9001/wp_json/wc/v2',
+        exampleApi: {
+          base: 'http://localhost:9001/api/v1',
           methods: [
             'GET',
             'POST',
@@ -586,15 +613,15 @@
             'TRACE',
             'CONNECT'
           ],
-          slug: 'wc',
-          default: true,
-          requester: 'oauth',
+          slug: 'example',
+          default: false,
+          requester: 'default',
           config: {
-            authentication: 'oauth',
-            version: '1.0a',
-            type: 'one_legged',
-            algorithm: 'HMAC-SHA1',
-            base64: true,
+            authentication: 'basic',
+            version: '',
+            type: '',
+            algorithm: '',
+            base64: false,
             sort: true,
             emptyParams: false,
             key: '',
@@ -604,55 +631,42 @@
               secret: ''
             },
             dualAuth: false,
-            indexArrays: true,
-            addDataToQuery: true,
+            indexArrays: false,
+            addDataToQuery: false,
             addAuthHeaders: false,
             nonce: '',
             nonceLength: 6,
             timestampLength: 30,
             ampersand: true,
-            taleNonce: '_wpnonce=wcApiSettings.nonce',
+            taleNonce: '',
             put: {
-              dualAuth: true
+              dualAuth: false
             },
-            perform: false // Get axios config instead of making request
+            perform: false // Perform request or optionally get request config instead
           },
           dataType: '',
           charset: '',
           data: '',
           file: null,
-          // @note - endpoints should be converted to object at export / fire
-          mappings: [
-            {
-              // @note - args, batch, props, headers should be converted to object at export / fire
-              name: 'products',
-              endpoint: '',
-              multiple: false,
-              child: '',
-              args: [],
-              batch: [
-                {key: 'save', value: 'update'},
-                {key: 'create', value: 'create'},
-                {key: 'delete', value: 'delete'}
-              ],
-              props: [],
-              headers: [],
-              identifier: '',
-              creationIdentifier: ''
-            }
-          ]
+          mappings: []
         }
       }
     },
     computed: {
+      preflight () {
+        return true // @todo - check by preflight routine
+      },
       url () {
         if (this.ep !== null) {
           return this.ep.shared.resolveUrl()
         } else {
-          return (this.api.base + this.endpoint.endpoint)
+          return (this.api.base + (this.endpoint === null ? '' : this.endpoint.endpoint))
         }
       },
       config () {
+        if (this.api === null) {
+          this.api = this.exampleApi
+        }
         let clone = JSON.parse(JSON.stringify(this.api))
         clone.mappings = {}
         this.api.mappings.forEach(endpoint => {
@@ -697,7 +711,13 @@
       }
     },
     created () {
-      this.apis.push(this.api)
+      this.load()
+      if (this.apis.length > 0) {
+        this.api = this.apis[0]
+        if (typeof this.api.mappings !== 'undefined' && this.api.mappings.length > 0) {
+          this.endpoint = this.api.mappings[0]
+        }
+      }
       let ep = this.genEndpoint(this.config)
       this.genRequest(this.method, ep)
     },
@@ -709,6 +729,7 @@
       config () {
         let ep = this.genEndpoint(this.config)
         this.genRequest(this.method, ep)
+        this.save()
       },
       'api.config.authentication' (value) {
         this.api.requester = value
@@ -755,6 +776,56 @@
       }
     },
     methods: {
+      save () {
+        localStorage.setItem('papir.apis', JSON.stringify(this.apis))
+      },
+      load () {
+        let apis = localStorage.getItem('papir.apis')
+        if (apis !== null) {
+          this.apis = JSON.parse(apis)
+        } else {
+          this.apis.push(JSON.parse(JSON.stringify(this.exampleApi)))
+          this.apis[0].mappings.push(JSON.parse(JSON.stringify(this.exampleEndpoint)))
+        }
+      },
+      removeApi (index) {
+        if (this.apis[index].slug === this.api.slug) {
+          this.apis.splice(index, 1)
+          this.api = this.apis[0]
+          if (typeof this.api.mappings !== 'undefined' && this.api.mappings.length > 0) {
+            this.endpoint = this.api.mappings[0]
+          } else {
+            this.endpoint = null
+          }
+        } else {
+          this.apis.splice(index, 1)
+        }
+        this.save()
+      },
+      removeEndpoint (index) {
+        if (this.endpoint !== null && this.endpoint.name === this.api.mappings[index].name) {
+          this.api.mappings.splice(index, 1)
+          if (this.api.mappings.length > 0) {
+            this.endpoint = this.api.mappings[0]
+          } else {
+            this.endpoint = null
+          }
+        } else {
+          this.api.mappings.splice(index, 1)
+          if (this.api.mappings.length === 0) {
+            this.endpoint = null
+          }
+        }
+        this.save()
+      },
+      addApi () {
+        this.apis.push(JSON.parse(JSON.stringify(this.exampleApi)))
+        this.save()
+      },
+      addEndpoint () {
+        this.api.mappings.push(JSON.parse(JSON.stringify(this.exampleEndpoint)))
+        this.save()
+      },
       fire () {
         this.axios.request(this.request).then(response => {
           this.response = response
@@ -853,7 +924,8 @@
         } else {
           api.requester = new this.$al.Requester(api.config)
         }
-        return (this.ep = new this.$al.Endpoint(this.endpoint.endpoint, controller))
+        let endpoint = this.endpoint === null ? '' : this.endpoint.endpoint
+        return (this.ep = new this.$al.Endpoint(endpoint, controller))
       }
     }
   }
