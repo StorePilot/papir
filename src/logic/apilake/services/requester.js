@@ -230,7 +230,6 @@ export default class Requester {
     this.makeDataQuery = (request, data, indexArrays = true) => {
       if (request.url.indexOf('?') !== -1) {
         request.url += '&' + qs.stringify(data)
-      } else {
         request.url += '?' + qs.stringify(data)
       }
       if (indexArrays) {

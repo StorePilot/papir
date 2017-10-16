@@ -17,7 +17,7 @@ class Util {
       let preserved = ''
       let qIndex = url.indexOf('?')
       if (qIndex !== -1) {
-        preserved = url.substr(0, qIndex)
+        preserved = url.substr(0, (qIndex + 1))
         url = url.substr((qIndex + 1))
       }
       let params = url.split('&')
