@@ -41,7 +41,7 @@
       </el-menu>
     </el-col>
     <el-col :sm="14" :lg="18">
-      <el-tabs type="border-card" style="max-height: 44vh; overflow-y: scroll;" v-model="activeTab">
+      <el-tabs type="border-card" style="max-height: 50vh; overflow-y: scroll;" v-model="activeTab">
 
         <el-tab-pane name="api" label="API">
           <el-col :lg="12" style="padding: 10px;">
@@ -432,7 +432,7 @@
           <pre>{{config}}</pre>
         </el-tab-pane>
       </el-tabs>
-      <el-row style="max-height: 44vh; overflow-y: scroll;">
+      <el-row style="max-height: calc(50vh - 38px); overflow-y: scroll;">
         <el-col :sm="24" :lg="12">
           <el-card style="margin: 20px 10px 10px;" class="box-card">
             <div slot="header" class="clearfix">
@@ -504,76 +504,6 @@
           </el-card>
         </el-col>
       </el-row>
-      <el-col :lg="24">
-        <el-steps align-center center style="margin: 20px;" :space="100" :active="step">
-          <div
-              @click="activeTab='api'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="setting" title="API"></el-step>
-          </div>
-          <div
-              @click="activeTab='endpoint'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="share" title="Endpoint"></el-step>
-          </div>
-          <div
-              @click="activeTab='mapping'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="d-arrow-right" title="Mapping"></el-step>
-          </div>
-          <div
-              @click="activeTab='data'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="picture" title="Data"></el-step>
-          </div>
-          <div
-              @click="activeTab='params'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="search" title="Params"></el-step>
-          </div>
-          <div
-              @click="activeTab='auth'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="warning" title="Auth"></el-step>
-          </div>
-          <div
-              @click="activeTab='sign'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="edit" title="Signature"></el-step>
-          </div>
-          <div
-              @click="activeTab='cookies'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="menu" title="Cookies"></el-step>
-          </div>
-          <div
-              @click="activeTab='headers'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="message" title="Headers"></el-step>
-          </div>
-          <div
-              @click="activeTab='cors'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="close" title="Cors"></el-step>
-          </div>
-          <div
-              @click="activeTab='view'"
-              class="el-step is-horizontal"
-              style="width: 100px; margin-right: -2.8px; cursor: pointer">
-            <el-step icon="check" title="Overview"></el-step>
-          </div>
-        </el-steps>
-      </el-col>
     </el-col>
     <el-input disabled v-model="url" class="addressbar" placeholder="Generated URL"></el-input>
   </el-row>
