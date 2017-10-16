@@ -1,4 +1,4 @@
-import glob from 'glob'
+import fs from 'fs'
 import path from 'path'
 import Requester from './requester'
 
@@ -10,21 +10,23 @@ export class Controller {
     this.default = null
     this.requesters = {}
     this.apis = {}
+    this.server = serverUrl
 
     // Load Requesters
-    glob.sync('./requesters/**/*.js').forEach(file => {
-      let requester = require(path.resolve(file))
-      this.requesters[requester.requester] = requester
+    fs.readdirSync(path.join(__dirname, '../requesters/')).forEach(file => {
+      let Requester = require('../requesters/' + file).default
+      let requester = new Requester()
+      this.requesters[requester.requester] = Requester
     })
 
     // Load and configure Apis
-    glob.sync('./apis/**/*.json').forEach(file => {
-      let api = require(path.resolve(file))
+    fs.readdirSync(path.join(__dirname, '../apis/')).forEach(file => {
+      let api = require('../apis/' + file)
       if (api.default || this.default === null) {
         this.default = api.slug
       }
-      if (serverUrl !== null) {
-        api.base = serverUrl
+      if (this.server !== null) {
+        api.base = this.server
       }
       if (
         typeof api.requester !== 'undefined' &&

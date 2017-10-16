@@ -228,9 +228,11 @@ export default class Requester {
     }
 
     this.makeDataQuery = (request, data, indexArrays = true) => {
-      if (request.url.indexOf('?') !== -1) {
-        request.url += '&' + qs.stringify(data)
-        request.url += '?' + qs.stringify(data)
+      let queryString = qs.stringify(data)
+      if (request.url.indexOf('?') === -1 && queryString !== '') {
+        request.url += '?' + queryString
+      } else if (queryString !== '') {
+        request.url += '&' + queryString
       }
       if (indexArrays) {
         request.url = util.indexArrayQuery(request.url)
