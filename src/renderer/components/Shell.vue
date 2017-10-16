@@ -77,14 +77,16 @@
         <el-tab-pane name="endpoint" label="Endpoint">
           <div v-if="endpoint!==null">
             <el-col :lg="12" style="padding: 10px;">
+              <h3>Name / Slug</h3>
+              <el-input v-model="endpoint.name" placeholder="users"></el-input>
               <h3>Endpoint - Path</h3>
               <el-input v-model="endpoint.endpoint" placeholder="/users{/id}"></el-input>
               <h3>Identifier</h3>
               <el-input v-model="endpoint.identifier" placeholder="Usually the id property"></el-input>
-              <h3>Creation Identifier</h3>
-              <el-input v-model="endpoint.creationIdentifier" placeholder="Usually the id property"></el-input>
             </el-col>
             <el-col :lg="12" style="padding: 10px;">
+              <h3>Creation Identifier</h3>
+              <el-input v-model="endpoint.creationIdentifier" placeholder="Usually the meta property"></el-input>
               <h3>
                 Multiple
                 <span style="font-size: .7em">
@@ -670,6 +672,7 @@
         let clone = JSON.parse(JSON.stringify(this.api))
         clone.mappings = {}
         this.api.mappings.forEach(endpoint => {
+          endpoint = JSON.parse(JSON.stringify(endpoint))
           let argsClone = JSON.parse(JSON.stringify(endpoint.args))
           endpoint.args = {}
           if (argsClone.constructor === Array) {
