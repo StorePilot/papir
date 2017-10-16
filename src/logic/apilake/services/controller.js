@@ -6,7 +6,7 @@ import Requester from './requester'
  * Controller
  */
 export class Controller {
-  constructor () {
+  constructor (serverUrl = null) {
     this.default = null
     this.requesters = {}
     this.apis = {}
@@ -22,6 +22,9 @@ export class Controller {
       let api = require(path.resolve(file))
       if (api.default || this.default === null) {
         this.default = api.slug
+      }
+      if (serverUrl !== null) {
+        api.base = serverUrl
       }
       if (
         typeof api.requester !== 'undefined' &&
