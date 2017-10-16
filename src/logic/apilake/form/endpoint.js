@@ -247,7 +247,7 @@ export default class Endpoint {
         args.forEach(arg => {
           url += arg.key + '=' + arg.value + '&'
         })
-        if (url[(url.length - 1)] === '&') {
+        if (url[(url.length - 1)] === '&' || url[(url.length - 1)] === '?') {
           url = url.slice(0, -1)
         }
       }
