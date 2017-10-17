@@ -29,86 +29,134 @@ export default class RequesterOauth extends Requester {
       upload = false,
       conf = this.conf
     ) => {
-      let request = {
-        url: url,
-        method: method,
-        headers: {}
+      /**
+       * Correct order of creating a request:
+       */
+      let request = {}
+
+      // 1. Append protocol (http / https)
+      // 2. Append base (://baseurl.com)
+      // 3. Append path (/api/v1/users/362)
+      // 4. Append arguments (?arg1=0&arg2=1)
+
+      request.url = url
+
+      // 5. Append data to querystring if required
+
+      if (conf.addDataToQuery && !upload) {
+        request = this.makeDataQuery(request, data)
+        data = null
       }
-      conf = JSON.parse(JSON.stringify(conf))
-      let dualAuth = conf.dualAuth
-      let indexArrays = conf.indexArrays
-      let addDataToQuery = conf.addDataToQuery
-      let addAuthHeaders = conf.addAuthHeaders
+
+      // 6. Append data to request
 
       if (data !== null) {
-        if (upload) {
-          request = this.makeUpload(request, data, indexArrays, conf)
-        } else if (addDataToQuery) {
-          request = this.makeDataQuery(request, data, indexArrays)
-        } else if (dualAuth) {
-          request = this.makeDataDualAuth(request, data, indexArrays, conf)
-        } else {
-          request = this.makeData(request, data, indexArrays, conf)
-        }
-      } else if (addAuthHeaders) {
-        let config = JSON.parse(JSON.stringify(conf))
-        config.url = request.url
-        config.method = request.method
-        let signGen = sign.gen(config)
-        request.url = util.stripUri(request.url) + '?' + signGen.string
-        request.headers['Authorization'] = signGen.header
+        request.data = data
       }
 
+      // 7. Append index to arrays in querystring if required
+
+      if (conf.indexArrays) {
+        request.url = util.indexArrayQuery(request.url)
+      }
+
+      // 8. Append method
+
+      request.method = method
+
+      // 9. Append method override if required
+
+      if (conf.override.method !== null && method !== conf.override.method) {
+        request.method = conf.override.method
+        request.url += request.url.indexOf('?') === -1 ? '?' : '&'
+        request.url += conf.override.arg + '=' + method
+      }
+
+      // 10. Append headers
+
+      /**
+       * @note - Simple headers which passes preflight:
+       * Accept (This should be declared in api config. [what response content does the client accept?]) 'application/json'
+       * Accept-Language
+       * Content-Language (This should be declared in api config. [what request content does the client send?]) 'application/json'
+       * Content-Type [application/x-www-form-urlencoded, multipart/form-data, text/plain] (Others creates preflight)
+       * DPR
+       * Downlink
+       * Save-Data
+       * Viewport-Width
+       * Width
+       * (Other headers creates preflight)
+       */
+
+      // Get predefined headers
+      request.headers = conf.headers
+
+      // If no data provided, set content-type to text/plain so preflight is avoided
+      if (typeof request.data === 'undefined') {
+        request.headers['Content-Type'] = 'text/plain'
+      }
+
+      // If data provided and it is a upload request, tell the server
+      if (upload) {
+        // @todo - Could be changed to multipart/form-data for multiupload, multi content later?
+        request.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+      }
+
+      // 11. Authorize
+
+      /**
+       * OAuth 1.0a Authorization protocol Start
+       */
+
+      // 1. Prepare configuration to be signed
+
+      conf.url = request.url
+      conf.method = request.method
+
+      // 2. If authentication should be applied to querystring
+
+      if (conf.authQuery) {
+        request.url = util.stripUri(request.url) + '?' + sign.gen(conf).string
+      }
+
+      // 3. If authentication should be applied to header
+
+      if (conf.authHeader) {
+        request.headers['Authorization'] = sign.gen(conf).header
+      }
+
+      /**
+       * OAuth 1.0a Authorization protocol End
+       */
+
+      // 12. Append argument to querystring after request is made. Ex. for cookie authentication
+      // @todo - Make own requester for cookie authentication
+
       request = this.makeTale(request, conf)
+
+      // 13. Make request abortable
+
       request = this.makeAbortable(request, abortPromise)
+
+      // 14. Transform response
+
+      // Set response type ['arraybuffer', 'blob', 'document', 'json', 'text', 'stream']
       request.responseType = conf.responseType
+
+      // Transform Response to raw
       request.transformResponse = (response) => {
         return response
       }
 
+      // 15. If request should be applied, perform and return
       if (conf.perform) {
         return axios.request(request)
-      } else {
-        // Transform to request as thats what caller expects
-        return new Promise(resolve => {
-          resolve(request)
-        })
       }
-    }
 
-    this.makeDataDualAuth = (request, data, indexArrays = true, conf = this.conf) => {
-      let config = JSON.parse(JSON.stringify(conf))
-      config.indexArrays = indexArrays
-      let method = request.method
-      let url = request.url
-      request.method = config.method = 'OPTIONS'
-      request.headers['Content-Type'] = 'application/json'
-      request.data = data
-
-      // Make Url
-      config.url = request.url.replace('_method=' + method + '&', '').replace('_method=' + method, '')
-      let signGen = sign.gen(config)
-      request.url = util.stripUri(config.url) + '?' + signGen.string
-
-      // Make Header
-      config.url = url
-      signGen = sign.gen(config)
-      request.headers['Authorization'] = signGen.header
-
-      return request
-    }
-
-    this.makeData = (request, data, indexArrays = true, conf = this.conf) => {
-      let config = JSON.parse(JSON.stringify(conf))
-      config.url = request.url
-      config.method = request.method
-      config.indexArrays = indexArrays
-      let signGen = sign.gen(config)
-      request.url = util.stripUri(request.url) + '?' + signGen.string
-      request.headers['Authorization'] = signGen.header
-      request.headers['Content-Type'] = 'application/json'
-      request.data = data
-      return request
+      // 16. If only the axios config object is needed, return resolved promise
+      return new Promise(resolve => {
+        resolve(request)
+      })
     }
 
     this.verifyToken = (url, token = '') => {

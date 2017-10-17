@@ -19,7 +19,6 @@ class Sign {
         nonce: '',
         nonceLength: 6,
         timestampLength: 30,
-        indexArrays: true,
         emptyParams: false,
         requester: null,
         base64: true,
@@ -33,7 +32,7 @@ class Sign {
         }
       })
 
-      let baseString = conf.method + '&' + scope.encode(scope.strip(conf.url)) + '&'
+      let baseString = conf.method + '&' + scope.encode(util.stripUri(conf.url)) + '&'
       let hash = ''
       let mergedParams = []
       scope.getParams(conf.url).forEach(param => {
@@ -44,7 +43,7 @@ class Sign {
       })
 
       if (conf.authentication === 'oauth' && conf.version === '1.0a') {
-        mergedParams.concat([
+        mergedParams = mergedParams.concat([
           {
             key: 'oauth_consumer_key',
             value: conf.key
@@ -77,8 +76,7 @@ class Sign {
             value: conf.requester
           })
         }
-
-        let paramString = scope.paramString(mergedParams, conf.emptyParams, conf.sort, conf.indexArrays)
+        let paramString = scope.paramString(mergedParams, conf.emptyParams, conf.sort)
         mergedParams = paramString.decoded
         baseString += scope.encode(paramString.string)
 
@@ -143,7 +141,7 @@ class Sign {
       }
     }
 
-    this.paramString = (params, emptyParams = false, sort = true, indexArrays = true) => {
+    this.paramString = (params, emptyParams = false, sort = true) => {
       params.forEach((param) => {
         param.key = scope.decode(param.key)
         param.value = scope.decode(param.value)
@@ -153,9 +151,9 @@ class Sign {
       let enc = []
       params.forEach((param) => {
         if (param.value !== '') {
-          enc.push(scope.encode(param.key, indexArrays) + '=' + scope.encode(param.value, indexArrays) + '&')
+          enc.push(scope.encode(param.key) + '=' + scope.encode(param.value) + '&')
         } else if (param.value === '' && param.key !== 'oauth_token' && emptyParams) {
-          enc.push(scope.encode(param.key, indexArrays) + '&')
+          enc.push(scope.encode(param.key) + '&')
         }
       })
 
@@ -196,10 +194,7 @@ class Sign {
     }
 
     // Encode decoded !*'()/ from string
-    this.encode = (url, indexArrays = true) => {
-      if (indexArrays) {
-        url = util.indexArrayQuery(url)
-      }
+    this.encode = (url) => {
       return encodeURIComponent(url)
         .replace(/!/g, '%21')
         .replace(/\*/g, '%2A')

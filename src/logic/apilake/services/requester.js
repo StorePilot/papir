@@ -9,8 +9,15 @@ export default class Requester {
   constructor (customConf = {}) {
     this.requester = 'default'
     this.conf = {
+      responseType: 'json', // ['arraybuffer', 'blob', 'document', 'json', 'text', 'stream']
+      headers: {},
+      override: {
+        arg: '_method', // The query argument to be given actual method
+        method: null // The replacement method. (will be fired instead of actual method. Ex.: 'OPTIONS')
+      },
       addDataToQuery: true,
-      dualAuth: false,
+      authQuery: true,
+      authHeader: false,
       authentication: 'oauth',
       version: '1.0a',
       type: 'one_legged',
@@ -30,7 +37,6 @@ export default class Requester {
       taleBefore: '', // Queryparams which will be added at the end of url, after all is set, before nonce
       taleNonce: '', // @note: Ex. To use for nonce through cookies: '_wpnonce=wcApiSettings.nonce'
       taleAfter: '', // Queryparams which will be added at the end of url, after all is set, after nonce
-      responseType: 'json', // options 'arraybuffer', 'blob', 'document', 'json', 'text', 'stream'
       // Conf specific per method type. (Same Options as above)
       get: {},
       post: {},
@@ -191,70 +197,122 @@ export default class Requester {
       upload = false,
       conf = this.conf
     ) => {
-      let request = {
-        url: url,
-        method: method,
-        headers: {}
+      /**
+       * Correct order of creating a request:
+       */
+      let request = {}
+
+      // 1. Append protocol (http / https)
+      // 2. Append base (://baseurl.com)
+      // 3. Append path (/api/v1/users/362)
+      // 4. Append arguments (?arg1=0&arg2=1)
+
+      request.url = url
+
+      // 5. Append data to querystring if required
+
+      if (conf.addDataToQuery && !upload) {
+        request = this.makeDataQuery(request, data)
+        data = null
       }
-      conf = JSON.parse(JSON.stringify(conf))
-      let indexArrays = conf.indexArrays
-      let addDataToQuery = conf.addDataToQuery
+
+      // 6. Append data to request
 
       if (data !== null) {
-        if (upload) {
-          request = this.makeUpload(request, data, indexArrays, conf)
-        } else if (addDataToQuery) {
-          request = this.makeDataQuery(request, data, indexArrays)
-        } else {
-          request = this.makeData(request, data, indexArrays, conf)
-        }
+        request.data = data
       }
 
+      // 7. Append index to arrays in querystring if required
+
+      if (conf.indexArrays) {
+        request.url = util.indexArrayQuery(request.url)
+      }
+
+      // 8. Append method
+
+      request.method = method
+
+      // 9. Append method override if required
+
+      if (conf.override.method !== null && method !== conf.override.method) {
+        request.method = conf.override.method
+        request.url += request.url.indexOf('?') === -1 ? '?' : '&'
+        request.url += conf.override.arg + '=' + method
+      }
+
+      // 10. Append headers
+
+      /**
+       * @note - Simple headers which passes preflight:
+       * Accept (This should be declared in api config. [what response content does the client accept?]) 'application/json'
+       * Accept-Language
+       * Content-Language (This should be declared in api config. [what request content does the client send?]) 'application/json'
+       * Content-Type [application/x-www-form-urlencoded, multipart/form-data, text/plain] (Others creates preflight)
+       * DPR
+       * Downlink
+       * Save-Data
+       * Viewport-Width
+       * Width
+       * (Other headers creates preflight)
+       */
+
+      // Get predefined headers
+      request.headers = conf.headers
+
+      // If no data provided, set content-type to text/plain so preflight is avoided
+      if (typeof request.data === 'undefined') {
+        request.headers['Content-Type'] = 'text/plain'
+      }
+
+      // If data provided and it is a upload request, tell the server
+      if (upload) {
+        // @todo - Could be changed to multipart/form-data for multiupload, multi content later?
+        request.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+      }
+
+      // 11. Authorize
+
+      // No authorization by default
+
+      // 12. Append argument to querystring after request is made. Ex. for cookie authentication
+      // @todo - Make own requester for cookie authentication
+
       request = this.makeTale(request, conf)
+
+      // 13. Make request abortable
+
       request = this.makeAbortable(request, abortPromise)
+
+      // 14. Transform response
+
+      // Set response type ['arraybuffer', 'blob', 'document', 'json', 'text', 'stream']
       request.responseType = conf.responseType
+
+      // Transform Response to raw
       request.transformResponse = (response) => {
         return response
       }
 
+      // 15. If request should be applied, perform and return
       if (conf.perform) {
         return axios.request(request)
-      } else {
-        // Transform to request as thats what caller expects
-        return new Promise(resolve => {
-          resolve(request)
-        })
       }
+
+      // 16. If only the axios config object is needed, return resolved promise
+      return new Promise(resolve => {
+        resolve(request)
+      })
     }
 
-    this.makeDataQuery = (request, data, indexArrays = true) => {
-      let queryString = qs.stringify(data)
-      if (request.url.indexOf('?') === -1 && queryString !== '') {
-        request.url += '?' + queryString
-      } else if (queryString !== '') {
-        request.url += '&' + queryString
+    this.makeDataQuery = (request, data) => {
+      if (data !== null) {
+        let queryString = qs.stringify(data)
+        if (request.url.indexOf('?') === -1 && queryString !== '') {
+          request.url += '?' + queryString
+        } else if (queryString !== '') {
+          request.url += '&' + queryString
+        }
       }
-      if (indexArrays) {
-        request.url = util.indexArrayQuery(request.url)
-      }
-      request.headers['Accept'] = 'application/json'
-      request.headers['Content-Type'] = 'text/plain'
-      return request
-    }
-
-    this.makeData = (request, data, indexArrays = true, conf = this.conf) => {
-      let config = JSON.parse(JSON.stringify(conf))
-      config.url = request.url
-      config.method = request.method
-      config.indexArrays = indexArrays
-      request.headers['Content-Type'] = 'application/json'
-      request.data = data
-      return request
-    }
-
-    this.makeUpload = (request, data, indexArrays = true, conf = this.conf) => {
-      request = this.makeData(request, data, indexArrays, conf)
-      request.headers['Content-Type'] = 'application/x-www-form-urlencoded'
       return request
     }
 

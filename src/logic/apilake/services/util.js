@@ -1,7 +1,12 @@
 class Util {
   constructor () {
     this.timestamp = (length = 30) => {
-      return Number(String(new Date().getTime()).substring(0, length))
+      let now = ''
+      while (now.length < length) {
+        now += '0'
+      }
+      now = (String(new Date().getTime()) + now).substring(0, length)
+      return Number(now)
     }
 
     this.nonce = (length = 6) => {

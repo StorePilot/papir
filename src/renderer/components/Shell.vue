@@ -209,16 +209,6 @@
 
         <el-tab-pane name="data" label="Data">
           <el-col :lg="12" style="padding: 10px;">
-            <h3>Data Type</h3>
-            <el-select
-                v-model="api.dataType"
-                filterable
-                allow-create
-                placeholder="Choose Data Type">
-              <el-option label="Not set" value=""></el-option>
-              <el-option label="text/plain" value="text/plain"></el-option>
-              <el-option label="application/json" value="application/json"></el-option>
-            </el-select>
             <h3>
               File
             </h3>
@@ -233,16 +223,6 @@
             </el-upload>
           </el-col>
           <el-col :lg="12" style="padding: 10px;">
-            <h3>Charset</h3>
-            <el-select
-                v-model="api.charset"
-                filterable
-                allow-create
-                placeholder="Choose Charset">
-              <el-option label="Not set" value=""></el-option>
-              <el-option label="utf-8" value="utf-8"></el-option>
-              <el-option label="utf-16" value="utf-16"></el-option>
-            </el-select>
             <h3>
               Data
             </h3>
@@ -281,7 +261,7 @@
                 off-color="#ff4949">
             </el-switch>
           </el-col>
-          <el-col :lg="12" style="padding: 10px;">
+          <el-col :lg="12" style="padding: 10px;" v-if="endpoint !== null">
             <h3>Custom Arguments (Per Endpoint)</h3>
             <div class="el-table">
               <table style="width: 100%; text-align: left">
@@ -388,18 +368,6 @@
             <el-input v-model="api.config.taleNonce"></el-input>
           </el-col>
           <el-col :lg="12" style="padding: 10px;">
-            <h3>Base64 Encode Signature</h3>
-            <el-switch
-                v-model="api.config.base64"
-                on-color="#13ce66"
-                off-color="#ff4949">
-            </el-switch>
-            <h3>Ampersand (&) after Client Id if Empty Secret</h3>
-            <el-switch
-                v-model="api.config.ampersand"
-                on-color="#13ce66"
-                off-color="#ff4949">
-            </el-switch>
           </el-col>
         </el-tab-pane>
 
@@ -410,18 +378,54 @@
               on-color="#13ce66"
               off-color="#ff4949">
           </el-switch>
+          <h3>Custom Headers (Per API)</h3>
+          <div class="el-table">
+            <table style="width: 100%; text-align: left">
+              <tr>
+                <th>Key</th>
+                <th>Value</th>
+                <th>Delete</th>
+              </tr>
+              <tr v-for="(arg, index) in api.config.headers">
+                <td>
+                  <el-input v-model="arg.key"></el-input>
+                </td>
+                <td>
+                  <el-input v-model="arg.value"></el-input>
+                </td>
+                <td>
+                  <el-button style="margin-bottom: 20px" @click="api.config.headers.splice(index, 1)">Clear</el-button>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <el-button
+              style="margin-top: 10px;"
+              @click="api.config.headers.push({ key: '', value: '' })">Add</el-button>
         </el-tab-pane>
 
         <el-tab-pane name="cors" label="Cross Origin">
-          <h3>Use OPTIONS requests with _method to override</h3>
+          <h3>Authorize by querystring</h3>
           <el-switch
-              v-model="api.config.dualAuth"
+              v-model="api.config.authQuery"
               on-color="#13ce66"
               off-color="#ff4949">
           </el-switch>
-          <h3>Use OPTIONS requests with _method to override for PUT only</h3>
+          <h3>Authorize by header</h3>
           <el-switch
-              v-model="api.config.put.dualAuth"
+              v-model="api.config.authHeader"
+              on-color="#13ce66"
+              off-color="#ff4949">
+          </el-switch>
+          <h3>Authorize by querystring (PUT only)</h3>
+          <el-switch
+              v-model="api.config.put.authQuery"
+              on-color="#13ce66"
+              off-color="#ff4949">
+          </el-switch>
+          <h3>Authorize by header (PUT only)</h3>
+          <el-switch
+              v-model="api.config.put.authHeader"
               on-color="#13ce66"
               off-color="#ff4949">
           </el-switch>
@@ -543,27 +547,23 @@
           creationIdentifier: ''
         },
         exampleApi: {
-          base: 'http://localhost:9001/api/v1',
+          base: 'http://localhost:9001/',
           methods: [
             'GET',
             'POST',
             'PUT',
-            'PATCH',
             'DELETE',
-            'OPTIONS',
-            'HEAD',
-            'TRACE',
-            'CONNECT'
+            'OPTIONS'
           ],
-          slug: 'example',
+          slug: 'wc',
           default: false,
-          requester: 'default',
+          requester: 'oauth',
           config: {
-            authentication: 'basic',
-            version: '',
-            type: '',
-            algorithm: '',
-            base64: false,
+            authentication: 'oauth',
+            version: '1.0a',
+            type: 'one_legged',
+            algorithm: 'HMAC-SHA1',
+            base64: true,
             sort: true,
             emptyParams: false,
             key: '',
@@ -572,22 +572,27 @@
               key: '',
               secret: ''
             },
-            dualAuth: false,
-            indexArrays: false,
-            addDataToQuery: false,
+            authQuery: true,
+            authHeader: false,
+            indexArrays: true,
+            addDataToQuery: true,
             addAuthHeaders: false,
             nonce: '',
             nonceLength: 6,
-            timestampLength: 30,
+            timestampLength: 10,
             ampersand: true,
-            taleNonce: '',
+            taleNonce: '', // _wpnonce=wcApiSettings.nonce
+            headers: [],
             put: {
-              dualAuth: false
+              authQuery: true,
+              authHeader: true,
+              override: {
+                arg: '_method',
+                method: 'OPTIONS'
+              }
             },
-            perform: false // Perform request or optionally get request config instead
+            perform: false
           },
-          dataType: '',
-          charset: '',
           data: '',
           file: null,
           mappings: []
@@ -650,6 +655,13 @@
 
           clone.mappings[endpoint.name] = endpointClone
         })
+        let headers = JSON.parse(JSON.stringify(clone.config.headers))
+        clone.config.headers = {}
+        if (headers.constructor === Array) {
+          headers.forEach(arg => {
+            clone.config.headers[arg.key] = arg.value
+          })
+        }
         return clone
       }
     },
@@ -670,11 +682,13 @@
         this.genRequest(this.method, ep)
       },
       endpoint () {
-        if (typeof this.endpoint.params === 'undefined') {
-          this.endpoint.params = []
+        if (this.endpoint !== null) {
+          if (typeof this.endpoint.params === 'undefined') {
+            this.endpoint.params = []
+          }
+          let ep = this.genEndpoint(this.config)
+          this.genRequest(this.method, ep)
         }
-        let ep = this.genEndpoint(this.config)
-        this.genRequest(this.method, ep)
       },
       method () {
         let ep = this.genEndpoint(this.config)
@@ -809,7 +823,13 @@
         let save = true // Enables 'save' in batch
         let file = this.file
         let options = {} // Batch options to enable / disable save, create, delete
-        let data = this.api.data
+        let data = {}
+        try {
+          data = JSON.parse(this.api.data)
+        } catch (e) {
+          console.error(e)
+        }
+
         let upload = false
         let promise = new Promise(resolve => {
           resolve()
