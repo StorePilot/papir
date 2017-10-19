@@ -18,6 +18,7 @@
             Add API
           </el-button>
         </el-menu-item>
+        <el-input v-if="typeof api.config !== 'undefined'" v-model="api.config.put.override.method"></el-input>
       </el-menu>
     </el-col>
     <el-col :sm="5" :lg="3">

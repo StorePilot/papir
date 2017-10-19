@@ -83,7 +83,7 @@ class Sign {
         let signKey = scope.signKey(conf.secret, conf.token.secret, conf.ampersand)
 
         if (conf.base64 && conf.algorithm === 'HMAC-SHA1') {
-          baseString = baseString.replace(/%00/, '%2500')
+          baseString = baseString.replace(/%00/g, '%2500').replace(/%0A/g, '%250A')
           hash = crypto.createHmac('sha1', signKey).update(baseString).digest('base64')
         }
       }
@@ -196,26 +196,31 @@ class Sign {
 
     // Encode decoded !*'()/ from string
     this.encode = (url) => {
-      return encodeURIComponent(url.replace(/%00/, 'null'))
+      return encodeURIComponent(url.replace(/%00/g, 'null').replace(/\n\r/g, '%0A').replace(/\n/g, '%0A').replace(/\r/g, '%0A'))
         .replace(/!/g, '%21')
         .replace(/\*/g, '%2A')
         .replace(/'/g, '%27')
         .replace(/\)/g, '%29')
         .replace(/\(/g, '%28')
         .replace(/null/g, '%00')
+        .replace(/%250A/g, '%0A')
     }
 
     // Decode encoded !*'()/ recursively from string
     this.decode = (url) => {
       let decode = (u) => {
-        return decodeURIComponent(String(u).replace(/%00/g, 'null'))
+        return decodeURIComponent(String(u).replace(/%0A/g, '%250A').replace(/%00/g, 'null'))
           .replace(/null/g, '%00')
+          .replace(/%250A/g, '%0A')
           .replace(/%21/g, '!')
           .replace(/%2A/g, '*')
           .replace(/%27/g, '\'')
           .replace(/%29/g, ')')
           .replace(/%28/g, '(')
           .replace(/%2F/g, '/')
+          .replace(/\n\r/g, '%0A')
+          .replace(/\n/g, '%0A')
+          .replace(/\r/g, '%0A')
       }
       let encoded = (u) => {
         u = u || ''
