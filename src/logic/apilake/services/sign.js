@@ -18,7 +18,7 @@ class Sign {
         token: { key: '', secret: '' },
         nonce: '',
         nonceLength: 6,
-        timestampLength: 30,
+        timestampLength: 10,
         emptyParams: false,
         requester: null,
         base64: true,
@@ -83,6 +83,7 @@ class Sign {
         let signKey = scope.signKey(conf.secret, conf.token.secret, conf.ampersand)
 
         if (conf.base64 && conf.algorithm === 'HMAC-SHA1') {
+          baseString = baseString.replace(/%00/, '%2500')
           hash = crypto.createHmac('sha1', signKey).update(baseString).digest('base64')
         }
       }
@@ -195,18 +196,20 @@ class Sign {
 
     // Encode decoded !*'()/ from string
     this.encode = (url) => {
-      return encodeURIComponent(url)
+      return encodeURIComponent(url.replace(/%00/, 'null'))
         .replace(/!/g, '%21')
         .replace(/\*/g, '%2A')
         .replace(/'/g, '%27')
         .replace(/\)/g, '%29')
         .replace(/\(/g, '%28')
+        .replace(/null/g, '%00')
     }
 
     // Decode encoded !*'()/ recursively from string
     this.decode = (url) => {
       let decode = (u) => {
-        return decodeURIComponent(u)
+        return decodeURIComponent(String(u).replace(/%00/g, 'null'))
+          .replace(/null/g, '%00')
           .replace(/%21/g, '!')
           .replace(/%2A/g, '*')
           .replace(/%27/g, '\'')
