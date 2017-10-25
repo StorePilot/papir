@@ -72,6 +72,15 @@
                 on-color="#13ce66"
                 off-color="#ff4949">
             </el-switch>
+            <h3>
+              Note
+            </h3>
+            <el-input
+                type="textarea"
+                :rows="7"
+                placeholder="Type here"
+                v-model="api.note">
+            </el-input>
           </el-col>
         </el-tab-pane>
 
@@ -109,6 +118,15 @@
                   v-show="endpoint.multiple"
                   v-model="endpoint.child"
                   placeholder="Ex. if this EP is 'products' you can insert 'product'"></el-input>
+              <h3>
+                Note
+              </h3>
+              <el-input
+                  type="textarea"
+                  :rows="7"
+                  placeholder="Type here"
+                  v-model="endpoint.note">
+              </el-input>
             </el-col>
           </div>
         </el-tab-pane>
@@ -225,13 +243,13 @@
           </el-col>
           <el-col :lg="12" style="padding: 10px;">
             <h3>
-              Data
+              Data (Per Endpoint)
             </h3>
             <el-input
                 type="textarea"
                 :rows="7"
                 placeholder="Type here"
-                v-model="api.data">
+                v-model="endpoint.data">
             </el-input>
           </el-col>
         </el-tab-pane>
@@ -545,7 +563,9 @@
           props: [],
           headers: [],
           identifier: '',
-          creationIdentifier: ''
+          creationIdentifier: '',
+          data: '',
+          note: ''
         },
         exampleApi: {
           base: 'http://localhost:9001/',
@@ -595,6 +615,7 @@
             perform: false
           },
           data: '',
+          note: '',
           file: null,
           mappings: []
         }
@@ -826,9 +847,10 @@
         let options = {} // Batch options to enable / disable save, create, delete
         let data = {}
         try {
-          data = JSON.parse(this.api.data)
+          data = JSON.parse(this.endpoint.data)
         } catch (e) {
           console.error(e)
+          data = this.endpoint.data
         }
 
         let upload = false

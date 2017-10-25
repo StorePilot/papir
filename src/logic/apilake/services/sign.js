@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 import util from './util'
+import encode from './encode'
 
 class Sign {
   constructor () {
@@ -32,10 +33,10 @@ class Sign {
         }
       })
 
-      let baseString = conf.method + '&' + scope.encode(util.stripUri(conf.url)) + '&'
+      let baseString = conf.method + '&' + encode.encode(util.stripUri(conf.url)) + '&'
       let hash = ''
       let mergedParams = []
-      scope.getParams(conf.url).forEach(param => {
+      util.getParams(conf.url).forEach(param => {
         mergedParams.push({
           key: param.key,
           value: param.value
@@ -78,12 +79,13 @@ class Sign {
         }
         let paramString = scope.paramString(mergedParams, conf.emptyParams, conf.sort)
         mergedParams = paramString.decoded
-        baseString += scope.encode(paramString.string)
+        baseString += encode.encode(paramString.string)
 
         let signKey = scope.signKey(conf.secret, conf.token.secret, conf.ampersand)
 
         if (conf.base64 && conf.algorithm === 'HMAC-SHA1') {
-          baseString = baseString.replace(/%00/g, '%2500').replace(/%0A/g, '%250A')
+          // baseString = baseString.replace(/%00/g, '%2500').replace(/%0A/g, '%250A').replace(/%0D/g, '%250D')
+          // @note At this point %00 = %252500, %0A = %25250A, %0D = %25250D
           hash = crypto.createHmac('sha1', signKey).update(baseString).digest('base64')
         }
       }
@@ -136,25 +138,20 @@ class Sign {
 
     this.signKey = (secret, tokenSecret, ampersand = true) => {
       if (ampersand || tokenSecret !== '') {
-        return scope.encode(secret) + '&' + scope.encode(tokenSecret)
+        return encode.encode(secret) + '&' + encode.encode(tokenSecret)
       } else {
-        return scope.encode(secret)
+        return encode.encode(secret)
       }
     }
 
     this.paramString = (params, emptyParams = false, sort = true) => {
-      params.forEach((param) => {
-        param.key = scope.decode(param.key)
-        param.value = scope.decode(param.value)
-      })
-
       let paramString = ''
       let enc = []
       params.forEach((param) => {
         if (param.value !== '') {
-          enc.push(scope.encode(param.key) + '=' + scope.encode(param.value) + '&')
+          enc.push(param.key + '=' + param.value + '&')
         } else if (param.value === '' && param.key !== 'oauth_token' && emptyParams) {
-          enc.push(scope.encode(param.key) + '&')
+          enc.push(param.key + '=&')
         }
       })
 
@@ -168,12 +165,12 @@ class Sign {
         let p = param.split('=')
         if (p.length === 2) {
           dec.push({
-            key: this.decode(p[0]),
-            value: this.decode(p[1]).replace(/&/g, '%26').slice(0, -3) // 'keep & decoded as its a key character'
+            key: encode.decode(p[0]),
+            value: encode.decode(p[1]).replace(/&/g, '%26').slice(0, -3) // 'keep & decoded as its a key character'
           })
         } else {
           dec.push({
-            key: this.decode(p[0]),
+            key: encode.decode(p[0]),
             value: ''
           })
         }
@@ -192,67 +189,6 @@ class Sign {
         encoded: enc,
         decoded: dec
       }
-    }
-
-    // Encode decoded !*'()/ from string
-    this.encode = (url) => {
-      return encodeURIComponent(url.replace(/%00/g, 'null').replace(/\n\r/g, '%0A').replace(/\n/g, '%0A').replace(/\r/g, '%0A'))
-        .replace(/!/g, '%21')
-        .replace(/\*/g, '%2A')
-        .replace(/'/g, '%27')
-        .replace(/\)/g, '%29')
-        .replace(/\(/g, '%28')
-        .replace(/null/g, '%00')
-        .replace(/%250A/g, '%0A')
-    }
-
-    // Decode encoded !*'()/ recursively from string
-    this.decode = (url) => {
-      let decode = (u) => {
-        return decodeURIComponent(String(u).replace(/%0A/g, '%250A').replace(/%00/g, 'null'))
-          .replace(/null/g, '%00')
-          .replace(/%250A/g, '%0A')
-          .replace(/%21/g, '!')
-          .replace(/%2A/g, '*')
-          .replace(/%27/g, '\'')
-          .replace(/%29/g, ')')
-          .replace(/%28/g, '(')
-          .replace(/%2F/g, '/')
-          .replace(/\n\r/g, '%0A')
-          .replace(/\n/g, '%0A')
-          .replace(/\r/g, '%0A')
-      }
-      let encoded = (u) => {
-        u = u || ''
-        return u !== decode(u)
-      }
-      while (encoded(url)) {
-        url = decode(url)
-      }
-      return url
-    }
-
-    this.getParams = (url) => {
-      let params = []
-      let split = url.split('?')
-      if (typeof split[1] !== 'undefined') {
-        let queries = split[1].split('&')
-        queries.forEach(q => {
-          q = q.split('=')
-          if (q.length === 2) {
-            params.push({
-              key: q[0],
-              value: q[1]
-            })
-          } else {
-            params.push({
-              key: q[0],
-              value: ''
-            })
-          }
-        })
-      }
-      return params
     }
   }
 }

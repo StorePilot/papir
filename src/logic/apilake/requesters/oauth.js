@@ -57,7 +57,7 @@ export default class RequesterOauth extends Requester {
       // 7. Append index to arrays in querystring if required
 
       if (conf.indexArrays) {
-        request.url = util.indexArrayQuery(request.url)
+        request.url = util.querystring.indexArrays(request.url)
       }
 
       // 8. Append method
