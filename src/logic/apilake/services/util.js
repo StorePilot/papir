@@ -237,7 +237,7 @@ class Util {
         }, options)
         let split = string.split(options.divider)
         let encoded = ''
-        if (split.length > 0) {
+        if (split.length > 1) {
           let params = split[1].split(options.delimiter)
           params.forEach(param => {
             let query = param.split(options.splitter)
