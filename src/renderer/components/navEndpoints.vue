@@ -4,7 +4,7 @@
         default-active="0"
         class="el-menu-vertical-demo"
         style="min-height: calc(100vh - 36px);">
-      <h3 style="margin: 20px;">Endpoints</h3>
+      <h4 style="margin: 20px;">Endpoints</h4>
       <draggable
           @change="$emit('save')"
           v-model="shared.api.mappings"

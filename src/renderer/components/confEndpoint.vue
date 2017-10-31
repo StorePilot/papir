@@ -1,44 +1,44 @@
 <template>
-  <div v-if="endpoint!==null">
-    <h3>Name / Slug</h3>
+  <div v-if="endpoint!==null" style="position: relative; padding: 10px; max-height: calc(100vh - 56px); overflow-y: scroll;">
+    <h5>Name / Slug</h5>
     <el-input v-model="endpoint.name" placeholder="users"></el-input>
-    <h3>Endpoint - Path</h3>
+    <h5>Endpoint - Path</h5>
     <el-input v-model="endpoint.endpoint" placeholder="/users{/id}"></el-input>
-    <h3>Identifier</h3>
+    <h5>Identifier</h5>
     <el-input v-model="endpoint.identifier" placeholder="Usually the id property"></el-input>
-    <h3>Creation Identifier</h3>
+    <h5>Creation Identifier</h5>
     <el-input v-model="endpoint.creationIdentifier" placeholder="Usually the meta property"></el-input>
-    <h3>
+    <h5>
       Multiple
       <span style="font-size: .7em">
               Does the endpoint respond with single or multiple elements
             </span>
-    </h3>
+    </h5>
     <el-switch
         v-model="endpoint.multiple"
         on-color="#13ce66"
         off-color="#ff4949">
     </el-switch>
-    <h3 v-show="endpoint.multiple">
+    <h5 v-show="endpoint.multiple">
       Child
       <span style="font-size: .7em">
               If this endpoint has multiple elements, map to children endpoint
             </span>
-    </h3>
+    </h5>
     <el-input
         v-show="endpoint.multiple"
         v-model="endpoint.child"
         placeholder="Ex. if this EP is 'products' you can insert 'product'"></el-input>
-    <h3>
+    <h5>
       Note
-    </h3>
+    </h5>
     <el-input
         type="textarea"
         :rows="7"
         placeholder="Type here"
         v-model="endpoint.note">
     </el-input>
-    <h3>Properties Mapping</h3>
+    <h5>Properties Mapping</h5>
     <div class="el-table">
       <table style="width: 100%; text-align: left">
         <tr>
@@ -60,7 +60,7 @@
       </table>
     </div>
     <el-button style="margin-top: 10px;" @click="endpoint.props.push({ key: '', value: '' })">Add</el-button>
-    <h3>Headers Mapping</h3>
+    <h5>Headers Mapping</h5>
     <div class="el-table">
       <table style="width: 100%; text-align: left">
         <tr>
@@ -82,7 +82,7 @@
       </table>
     </div>
     <el-button style="margin-top: 10px;" @click="endpoint.headers.push({ key: '', value: '' })">Add</el-button>
-    <h3>Arguments Mapping</h3>
+    <h5>Arguments Mapping</h5>
     <div class="el-table">
       <table style="width: 100%; text-align: left">
         <tr>
@@ -104,7 +104,7 @@
       </table>
     </div>
     <el-button style="margin-top: 10px;" @click="endpoint.args.push({ key: '', value: '' })">Add</el-button>
-    <h3>Batch Mapping</h3>
+    <h5>Batch Mapping</h5>
     <div class="el-table">
       <table style="width: 100%; text-align: left">
         <tr>
@@ -126,9 +126,9 @@
       </table>
     </div>
     <el-button style="margin-top: 10px;" @click="endpoint.batch.push({ key: '', value: '' })">Add</el-button>
-    <h3>
+    <h5>
       File
-    </h3>
+    </h5>
     <el-upload
         style="width: 100%;"
         class="upload-demo"
@@ -138,16 +138,16 @@
       <i class="el-icon-upload"></i>
       <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
     </el-upload>
-    <h3>
+    <h5>
       Data (Per Endpoint)
-    </h3>
+    </h5>
     <el-input
         type="textarea"
         :rows="7"
         placeholder="Type here"
         v-model="endpoint.data">
     </el-input>
-    <h3>Custom Arguments (Per Endpoint)</h3>
+    <h5>Custom Arguments (Per Endpoint)</h5>
     <div class="el-table">
       <table style="width: 100%; text-align: left">
         <tr>
@@ -186,4 +186,7 @@
 </script>
 
 <style>
+  .el-upload, .el-upload-dragger {
+    width: 100%;
+  }
 </style>

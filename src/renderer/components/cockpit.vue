@@ -4,8 +4,56 @@
       <el-input
           disabled
           v-model="url"
-          class="addressbar"
+          class="address"
+          style="float: left; width: calc(100% - 160px - 75px - 70px);"
           placeholder="Generated URL"></el-input>
+      <el-select
+          v-model="shared.method"
+          style="float: left; width: 150px; padding: 0; margin: 0 5px;"
+          placeholder="Method">
+        <el-option
+            v-for="method in shared.api.methods"
+            :key="method"
+            :label="method"
+            :value="method">
+        </el-option>
+        <el-option
+            label="FETCH"
+            value="FETCH">
+        </el-option>
+        <el-option
+            label="SAVE"
+            value="SAVE">
+        </el-option>
+        <el-option
+            label="CREATE"
+            value="CREATE">
+        </el-option>
+        <el-option
+            label="REMOVE"
+            value="REMOVE">
+        </el-option>
+        <el-option
+            label="UPLOAD"
+            value="UPLOAD">
+        </el-option>
+        <el-option
+            label="BATCH"
+            value="BATCH">
+        </el-option>
+      </el-select>
+      <el-button
+          @click="fire()"
+          style="float: left; border-radius: 0; width: 70px; margin: 0 5px 0 0"
+          type="warning">
+        Fire
+      </el-button>
+      <el-button
+          style="float: left; border-radius: 0; width: 70px; margin: 0;"
+          @click="open()"
+          type="info">
+        Open
+      </el-button>
     </el-row>
     <el-row>
       <el-col :sm="3" :lg="2">
@@ -241,6 +289,9 @@
       }
     },
     methods: {
+      open () {
+        window.open(this.shared.request.url)
+      },
       fire () {
         this.axios.request(this.shared.request).then(response => {
           this.shared.response = response
@@ -376,4 +427,7 @@
 </script>
 
 <style>
+  .address input {
+    border-radius: 0;
+  }
 </style>
