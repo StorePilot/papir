@@ -8,29 +8,33 @@
           placeholder="Generated URL"></el-input>
     </el-row>
     <el-row>
-      <el-col :sm="5" :lg="3">
+      <el-col :sm="3" :lg="2">
         <nav-apis
             @save="save"
             :shared="shared">
         </nav-apis>
       </el-col>
-      <el-col :sm="5" :lg="3">
+      <el-col :sm="5">
         <conf-api :api="shared.api"></conf-api>
       </el-col>
-      <el-col :sm="5" :lg="3">
+      <el-col :sm="3" :lg="2">
         <nav-endpoints
             @save="save"
             :shared="shared">
         </nav-endpoints>
       </el-col>
-      <el-col :sm="5" :lg="3">
+      <el-col :sm="5">
         <conf-endpoint :endpoint="shared.endpoint"></conf-endpoint>
       </el-col>
-      <el-col :sm="5" :lg="3">
-        <requester :shared="shared"></requester>
-      </el-col>
-      <el-col :sm="5" :lg="3">
-        <receiver :shared="shared"></receiver>
+      <el-col :sm="8" :lg="10">
+        <el-row>
+          <el-col :sm="24">
+            <requester :shared="shared"></requester>
+          </el-col>
+          <el-col :sm="24">
+            <receiver :shared="shared"></receiver>
+          </el-col>
+        </el-row>
       </el-col>
     </el-row>
   </div>

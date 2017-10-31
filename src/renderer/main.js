@@ -8,6 +8,7 @@ import axios from 'axios'
 import VueAxios from 'vue-axios'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-default/index.css'
+import contextMenu from 'vue-context-menu'
 
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 
@@ -16,6 +17,7 @@ Vue.use(ElementUI)
 Vue.use(Apilake)
 Vue.use(VueAxios, axios)
 Vue.use(TreeView)
+Vue.use(contextMenu)
 
 /* eslint-disable no-new */
 new Vue({
