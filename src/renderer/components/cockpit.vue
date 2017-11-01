@@ -108,6 +108,7 @@
     data () {
       return {
         shared: {
+          responseConfig: {},
           file: null,
           request: {},
           response: {},
@@ -300,11 +301,22 @@
             this.shared.response = response
           }
         }).catch(error => {
-          try {
-            this.shared.response = JSON.parse(error.response)
-          } catch (e) {
-            this.shared.response = error
+          if (error.response) {
+            try {
+              this.shared.response = JSON.parse(error.response)
+            } catch (e) {
+              this.shared.response = error.response
+            }
+          } else if (error.request) {
+            try {
+              this.shared.response = JSON.parse(error.request)
+            } catch (e) {
+              this.shared.response = error.request
+            }
+          } else {
+            this.shared.response = error.message
           }
+          this.shared.responseConfig = error.config
         })
       },
       save () {
