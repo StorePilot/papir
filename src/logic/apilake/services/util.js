@@ -169,9 +169,10 @@ class Util {
        * @param delimiter
        * @param splitter
        * @param divider
+       * @param indexEncodedArrays
        * @returns {*}
        */
-      indexArrays: (querystring, delimiter = '&', splitter = '=', divider = '?') => {
+      indexArrays: (querystring, delimiter = '&', splitter = '=', divider = '?', indexEncodedArrays = true) => {
         let preserved = ''
         let qIndex = querystring.indexOf(divider)
         if (qIndex !== -1) {
@@ -198,7 +199,7 @@ class Util {
               param = param.replace(preKey, key)
               i++
             }
-          } else if (param.indexOf('%5B%5D') !== -1) {
+          } else if (param.indexOf('%5B%5D') !== -1 && indexEncodedArrays) {
             if (i === 0 || param.indexOf(preKey) === -1) {
               i = 0
               let key = preKey = param.split(splitter)[0]
