@@ -341,7 +341,7 @@
       },
       genRequest (method, endpoint) {
         let apiSlug = null
-        let args = this.shared.args
+        let args = this.shared.endpoint.args
         let replace = false
         let perform = false
         let create = true

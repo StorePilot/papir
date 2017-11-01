@@ -219,7 +219,7 @@ class Util {
       },
       /**
        * Encode arguments after first divider until second divider
-       * Ex.: ignored?encoded?ignored?ignored
+       * Ex.: ignored?encoded?ignored?ignored @todo - encode all after first ?
        * @param string
        * @param options
        * @returns {string}
@@ -235,17 +235,31 @@ class Util {
           encodeNames: true,
           encodeValues: true
         }, options)
-        let split = string.split(options.divider)
+        let split = [
+          string.substring(0, string.indexOf(options.divider)),
+          string.substring(string.indexOf(options.divider) + 1)
+        ]
         let encoded = ''
-        if (split.length > 1) {
+        if (string.indexOf(options.divider) !== -1) {
           let params = split[1].split(options.delimiter)
           params.forEach(param => {
             let query = param.split(options.splitter)
             let key = ''
             let value = ''
-            if (query.length === 2) {
-              key = options.encodeNames ? encode.encode(query[0], options.protocol, options.encodeNull) : query[0]
-              value = options.encodeValues ? encode.encode(query[1], options.protocol, options.encodeNull) : query[1]
+            if (query.length > 1) {
+              let i = 0
+              query.forEach(q => {
+                if (i === 0) {
+                  key = options.encodeNames ? encode.encode(q, options.protocol, options.encodeNull) : q
+                } else if (i === 1) {
+                  value = options.encodeValues ? encode.encode(q, options.protocol, options.encodeNull) : q
+                } else {
+                  value +=
+                    (options.encodeValues ? encode.encode(options.splitter, options.protocol, options.encodeNull) : options.splitter) +
+                    (options.encodeValues ? encode.encode(q, options.protocol, options.encodeNull) : q)
+                }
+                i++
+              })
             } else if (query.length === 1) {
               key = options.encodeNames ? encode.encode(query[0], options.protocol, options.encodeNull) : query[0]
             }
@@ -260,7 +274,6 @@ class Util {
             encoded = encoded.slice(0, -1)
           }
         }
-
         // Rebuild arguments
         string = ''
         let i = 0
