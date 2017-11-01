@@ -301,7 +301,7 @@
           }
         }).catch(error => {
           try {
-            this.shared.response = JSON.parse(error)
+            this.shared.response = JSON.parse(error.response)
           } catch (e) {
             this.shared.response = error
           }

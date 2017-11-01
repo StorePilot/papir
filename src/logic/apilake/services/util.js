@@ -61,14 +61,13 @@ class Util {
        * @param options.keepEmpty: boolean Keep or remove keys with empty values
        * @returns querystring - Ex.: 'name=val1&name2[]=val2&name2[]=val3&name3[name4]=val4&name3[name5][]=val5'
        */
-      stringify: (value = null, options) => {
+      stringify: (value = null, options, first = true) => {
         options = Object.assign({
           name: null,
           protocol: 'rfc3986',
           encodeNull: true,
           dateFormat: '', // Default ISO 8601
           keepEmpty: true,
-          first: true,
           delimiter: '&',
           splitter: '=',
           dotNotation: false,
@@ -81,7 +80,7 @@ class Util {
         let name = options.name
         let error = false
         if (
-          options.first &&
+          first &&
           name !== null &&
           typeof name === 'string' &&
           options.excludes.indexOf(name) !== -1 &&
@@ -89,12 +88,12 @@ class Util {
         ) {
           options.name = null
         }
-        if (options.first && options.encodeNames && name !== null) {
+        if (first && options.encodeNames && name !== null) {
           name = encode.encode(name, options.protocol, options.encodeNull)
         }
         try {
           value = JSON.parse(value)
-        } finally {
+        } catch (e) {} finally {
           if (typeof value === 'undefined' && name !== null) {
             // undefined
           } else if (value === null && name !== null) {
@@ -113,59 +112,53 @@ class Util {
             value = moment(value).format(options.dateFormat)
           } else if (value.constructor === Array && name !== null) {
             value.forEach(val => {
-              querystring += self.stringify(val, Object.assign(options, {
-                name: name + '[]',
-                first: false
-              }))
+              querystring += this.querystring.stringify(val, Object.assign(options, {
+                name: name + '[]'
+              }), false)
             })
+            // Array
           } else if (value.constructor === Object) {
             Object.keys(value).forEach(key => {
               if (
                 options.excludes.indexOf(key) === -1 ||
                 options.includes.indexOf(key) !== -1 ||
-                !options.first
+                !first
               ) {
                 if (name === null) {
-                  querystring += self.stringify(value[key], Object.assign(options, {
-                    name: options.encodeNames ? encode.encode(key, options.protocol, options.encodeNull) : key,
-                    first: false
-                  }))
+                  querystring += this.querystring.stringify(value[key], Object.assign(options, {
+                    name: options.encodeNames ? encode.encode(key, options.protocol, options.encodeNull) : key
+                  }), false)
                 } else {
                   key = options.dotNotation ? ('.' + key) : ('[' + key + ']')
                   key = options.encodeNames ? encode.encode(key, options.protocol, options.encodeNull) : key
-                  querystring += self.stringify(value[key], Object.assign(options, {
-                    name: name + key,
-                    first: false
-                  }))
+                  querystring += this.querystring.stringify(value[key], Object.assign(options, {
+                    name: name + key
+                  }), false)
                 }
               }
             })
+            // Object
           } else {
             console.error({
               message: 'Uknown datatype. Could not stringify value to querystring',
               data: options
             })
             error = true
+            // Unknown
           }
           if (!error) {
-            if (name !== '' && value !== '') {
-              if (querystring !== '') {
-                querystring += options.delimiter
-              }
+            if (name !== null && name !== '' && value !== '') {
               if (options.encodeValues) {
                 value = encode.encode(value, options.protocol, options.encodeNull)
               }
-              querystring += name + options.splitter + value
-            } else if (name !== '' && options.keepEmpty) {
-              if (querystring !== '') {
-                querystring += options.delimiter
-              }
-              querystring += name + options.splitter
+              querystring += name + options.splitter + value + options.delimiter
+            } else if (name !== null && name !== '' && options.keepEmpty) {
+              querystring += name + options.splitter + options.delimiter
             }
           }
         }
         // Remove last delimiter
-        if (options.first && querystring !== '') {
+        if (first && querystring !== '') {
           querystring = querystring.slice(0, -1)
         }
         return querystring
