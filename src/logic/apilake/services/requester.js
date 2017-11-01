@@ -253,8 +253,10 @@ export default class Requester {
       })
       if (querystring !== '') {
         querystring = querystring.slice(0, -1)
+        request.url = util.stripUri(request.url) + '?' + querystring
+      } else {
+        request.url = util.stripUri(request.url)
       }
-      request.url = util.stripUri(request.url) + '?' + querystring
 
       // 6. Append index to arrays in querystring if required
 

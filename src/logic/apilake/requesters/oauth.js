@@ -37,27 +37,70 @@ export default class RequesterOauth extends Requester {
       // 1. Append protocol (http / https)
       // 2. Append base (://baseurl.com)
       // 3. Append path (/api/v1/users/362)
-      // 4. Append arguments (?arg1=0&arg2=1)
+      // 4.1 Append arguments (?arg1=0&arg2=1)
 
       request.url = url
 
-      // 5. Append data to querystring if required
+      // 4.2 Encode arguments after first divider until second divider.
+      // Ex.: ignored?encoded?ignored?ignored
+      request.url = util.querystring.encode(request.url, {
+        protocol: 'rfc3986',
+        divider: '?',
+        delimiter: '&',
+        splitter: '=',
+        encodeNull: true,
+        keepEmpty: true,
+        encodeNames: true,
+        encodeValues: true
+      })
+
+      // 5.1 Append data to querystring arguments if required
 
       if (conf.addDataToQuery && !upload) {
-        request = this.makeDataQuery(request, data)
+        request.url = this.makeDataQuery(request.url, data, {
+          name: null,
+          protocol: 'rfc3986',
+          encodeNull: true,
+          dateFormat: '', // Default ISO 8601
+          keepEmpty: true,
+          delimiter: '&',
+          splitter: '=',
+          dotNotation: false,
+          encodeNames: true,
+          encodeValues: true,
+          excludes: [], // At first level
+          includes: [] // At first level. includes overrides excludes
+        })
         data = null
       }
 
-      // 6. Append data to request
-
-      if (data !== null) {
-        request.data = data
+      // 5.2 Sort arguments if required
+      let querystring = ''
+      let sortable = []
+      util.getParams(request.url).forEach(param => {
+        sortable.push(param.key + '=' + param.value + '&')
+      })
+      sortable.sort()
+      sortable.forEach(param => {
+        querystring += param
+      })
+      if (querystring !== '') {
+        querystring = querystring.slice(0, -1)
+        request.url = util.stripUri(request.url) + '?' + querystring
+      } else {
+        request.url = util.stripUri(request.url)
       }
 
-      // 7. Append index to arrays in querystring if required
+      // 6. Append index to arrays in querystring if required
 
       if (conf.indexArrays) {
         request.url = util.querystring.indexArrays(request.url)
+      }
+
+      // 7. Append data to request
+
+      if (data !== null) {
+        request.data = data
       }
 
       // 8. Append method

@@ -273,6 +273,9 @@ class Util {
           if (encoded !== '') {
             encoded = encoded.slice(0, -1)
           }
+        } else {
+          split[0] = string
+          delete split[1]
         }
         // Rebuild arguments
         string = ''

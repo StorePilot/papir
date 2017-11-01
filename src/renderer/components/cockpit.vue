@@ -294,9 +294,17 @@
       },
       fire () {
         this.axios.request(this.shared.request).then(response => {
-          this.shared.response = response
+          try {
+            this.shared.response = JSON.parse(response)
+          } catch (e) {
+            this.shared.response = response
+          }
         }).catch(error => {
-          this.shared.response = error
+          try {
+            this.shared.response = JSON.parse(error)
+          } catch (e) {
+            this.shared.response = error
+          }
         })
       },
       save () {
@@ -350,10 +358,10 @@
         let options = {} // Batch options to enable / disable save, create, delete
         let data = {}
         try {
-          data = JSON.parse(endpoint.data)
+          data = JSON.parse(this.shared.endpoint.data)
         } catch (e) {
-          if (endpoint !== null) {
-            data = endpoint.data
+          if (this.shared.endpoint !== null) {
+            data = this.shared.endpoint.data
           }
         }
         let upload = false
