@@ -24,7 +24,11 @@ class Sign {
         requester: null,
         base64: true,
         ampersand: true,
-        sort: true
+        sort: true,
+        protocol: 'rfc3986',
+        encodeNull: true,
+        encodeNames: true,
+        encodeValues: true
       }
 
       Object.keys(conf).forEach((key) => {
@@ -108,20 +112,36 @@ class Sign {
       // Generate OAuth header
       let header = 'OAuth '
       params.forEach((param) => {
-        if (param.value !== '') {
-          header += param.name + '="' + param.value + '",'
+        let key = param.name
+        let value = param.value
+        if (conf.encodeNames) {
+          key = encode.encode(key, conf.protocol, conf.encodeNull)
+        }
+        if (conf.encodeValues) {
+          value = encode.encode(value, conf.protocol, conf.encodeNull)
+        }
+        if (value !== '') {
+          header += key + '="' + value + '",'
         } else {
-          header += param.name + '",'
+          header += key + '",'
         }
       })
 
       let queryString = ''
       let i = 0
       params.forEach((param) => {
-        if (param.value !== '') {
-          queryString += param.name + '=' + param.value
+        let key = param.name
+        let value = param.value
+        if (conf.encodeNames) {
+          key = encode.encode(key, conf.protocol, conf.encodeNull)
+        }
+        if (conf.encodeValues) {
+          value = encode.encode(value, conf.protocol, conf.encodeNull)
+        }
+        if (value !== '') {
+          queryString += key + '=' + value
         } else {
-          queryString += param.name
+          queryString += key
         }
         if (i !== (params.length - 1)) {
           queryString += '&'
@@ -166,7 +186,7 @@ class Sign {
         if (p.length === 2) {
           dec.push({
             key: encode.decode(p[0]),
-            value: encode.decode(p[1]).replace(/&/g, '%26').slice(0, -3) // 'keep & decoded as its a key character'
+            value: encode.decode(p[1]).slice(0, -1)
           })
         } else {
           dec.push({
