@@ -211,7 +211,12 @@
     name: 'confApi',
     props: [
       'api'
-    ]
+    ],
+    watch: {
+      'api.config.authentication' (val) {
+        this.api.requester = val
+      }
+    }
   }
 </script>
 
