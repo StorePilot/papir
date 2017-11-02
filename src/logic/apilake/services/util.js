@@ -74,7 +74,9 @@ class Util {
           encodeNames: true,
           encodeValues: true,
           excludes: [], // At first level
-          includes: [] // At first level. includes overrides excludes
+          includes: [], // At first level. includes overrides excludes
+          arrayIndexOpen: '[',
+          arrayIndexClose: ']'
         }, options)
         let querystring = ''
         let name = options.name
@@ -112,8 +114,9 @@ class Util {
             value = moment(value).format(options.dateFormat)
           } else if (value.constructor === Array && name !== null) {
             value.forEach(val => {
+              let arrayIdentifier = (options.arrayIndexOpen + options.arrayIndexClose)
               querystring += this.querystring.stringify(val, Object.assign(options, {
-                name: name + '[]'
+                name: name + (options.encodeNames ? encode.encode(arrayIdentifier, options.protocol, options.encodeNull) : arrayIdentifier)
               }), false)
             })
             // Array
@@ -129,7 +132,7 @@ class Util {
                     name: options.encodeNames ? encode.encode(key, options.protocol, options.encodeNull) : key
                   }), false)
                 } else {
-                  let keyConverted = options.dotNotation ? ('.' + key) : ('[' + key + ']')
+                  let keyConverted = options.dotNotation ? ('.' + key) : (options.arrayIndexOpen + key + options.arrayIndexClose)
                   keyConverted = options.encodeNames ? encode.encode(keyConverted, options.protocol, options.encodeNull) : keyConverted
                   querystring += this.querystring.stringify(value[key], Object.assign(options, {
                     name: name + keyConverted
