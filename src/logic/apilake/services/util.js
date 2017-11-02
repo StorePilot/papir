@@ -129,10 +129,10 @@ class Util {
                     name: options.encodeNames ? encode.encode(key, options.protocol, options.encodeNull) : key
                   }), false)
                 } else {
-                  key = options.dotNotation ? ('.' + key) : ('[' + key + ']')
-                  key = options.encodeNames ? encode.encode(key, options.protocol, options.encodeNull) : key
+                  let keyConverted = options.dotNotation ? ('.' + key) : ('[' + key + ']')
+                  keyConverted = options.encodeNames ? encode.encode(keyConverted, options.protocol, options.encodeNull) : keyConverted
                   querystring += this.querystring.stringify(value[key], Object.assign(options, {
-                    name: name + key
+                    name: name + keyConverted
                   }), false)
                 }
               }
@@ -146,7 +146,7 @@ class Util {
             error = true
             // Unknown
           }
-          if (!error) {
+          if (!error && value.constructor !== Array && value.constructor !== Object) {
             if (name !== null && name !== '' && value !== '') {
               if (options.encodeValues) {
                 value = encode.encode(value, options.protocol, options.encodeNull)
