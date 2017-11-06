@@ -1,7 +1,10 @@
 <template>
-  <div class="el-table">
+  <div class="el-table" v-loading="shared.ep.loading">
+    <div>
+      <el-button style="display: inline-block; float: left" @click="fetch(shared.ep)">Fetch All</el-button>
+      <el-button style="display: inline-block; float: left" @click="save(shared.ep)">Save All</el-button>
+    </div>
     <table style="width: 100%; text-align: left">
-      <el-button @click="shared.ep.fetch()">Fetch All</el-button>
       <tr>
         <th>Key</th>
         <th>Value</th>
@@ -19,11 +22,11 @@
           <el-button
               size="mini"
               style="margin-bottom: 20px"
-              @click="prop.fetch()">Fetch</el-button>
+              @click="fetch(prop)">Fetch</el-button>
           <el-button
               size="mini"
               style="margin-bottom: 20px"
-              @click="prop.save()">Save</el-button>
+              @click="save(prop)">Save</el-button>
         </td>
       </tr>
     </table>
@@ -56,6 +59,28 @@
           props.push(obj[key])
         })
         return props
+      },
+      fetch (obj) {
+        obj.fetch().then(resp => {
+          if (typeof resp.raw !== 'undefined') {
+            this.shared.response = resp.raw
+          } else {
+            this.shared.response = resp.value
+          }
+        }).catch(e => {
+          this.shared.response = e
+        })
+      },
+      save (obj) {
+        obj.save().then(resp => {
+          if (typeof resp.raw !== 'undefined') {
+            this.shared.response = resp.raw
+          } else {
+            this.shared.response = resp.value
+          }
+        }).catch(e => {
+          this.shared.response = e
+        })
       }
     }
   }

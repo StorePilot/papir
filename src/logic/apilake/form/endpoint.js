@@ -813,14 +813,14 @@ export default class Endpoint {
         promise = cancelHandler.promise
       }
       return new Promise((resolve, reject) => {
-        startLoader(method)
+        // startLoader(method)
         let api = (accessor.shared.controller !== null && apiSlug !== null) ? accessor.shared.controller.apis[apiSlug] : accessor.shared.api
         accessor.shared.requester[method.toLowerCase()](accessor.shared.resolveUrl(endpoint, accessor.shared.map, api, args), promise, data, upload, conf).then(response => {
           accessor.raw = response
-          stopLoader(method)
+          // stopLoader(method)
           resolve(response)
         }).catch(error => {
-          stopLoader(method)
+          // stopLoader(method)
           reject(accessor.shared.handleError(error))
         })
       }).catch(error => {

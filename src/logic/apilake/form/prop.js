@@ -15,6 +15,7 @@ export default class Prop {
     accessor.key = key
     accessor.loading = false
     accessor.loaders = []
+    accessor.raw = null
 
     /**
      * Private methods
@@ -88,14 +89,16 @@ export default class Prop {
             perform: perform
           }
         ).then(response => {
+          accessor.raw = response
           parent.shared.handleSuccess(response, replace, key).then(results => {
             stopLoader(loadSlug)
-            resolve(results)
+            resolve(accessor)
           }).catch(error => {
             stopLoader(loadSlug)
             reject(error)
           })
         }).catch(error => {
+          accessor.raw = error
           // If could not save, try create and update all properties
           if (create) {
             parent.shared.accessor.create(apiSlug, args, replace).then(() => {
@@ -130,17 +133,19 @@ export default class Prop {
             perform: perform
           }
         ).then(response => {
+          accessor.raw = response
           console.log(response)
           console.log(replace)
           console.log(key)
           parent.shared.handleSuccess(response, replace, key).then(results => {
             stopLoader(loadSlug)
-            resolve(results)
+            resolve(accessor)
           }).catch(error => {
             stopLoader(loadSlug)
             reject(error)
           })
         }).catch(error => {
+          accessor.raw = error
           stopLoader(loadSlug)
           reject(error)
         })
