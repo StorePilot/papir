@@ -7,15 +7,13 @@
         <th>Value</th>
         <th>Actions</th>
       </tr>
-      <tr
-          v-if="typeof shared.ep !== 'undefined' && shared.ep !== null && shared.ep.constructor === Object"
-          v-for="(prop, index) in shared.ep.props(true)"
-          v-loading="prop.loading">
+      <tr v-for="prop in props">
         <td>
           {{prop.key}}
         </td>
-        <td>
-          <el-input v-model="prop.value"></el-input>
+        <td v-loading="prop.loading">
+          <el-input v-if="typeof prop.value === 'string'" v-model="prop.value"></el-input>
+          <textarea v-else v-model="prop.value"></textarea>
         </td>
         <td>
           <el-button style="margin-bottom: 20px" @click="prop.fetch()">Fetch</el-button>
@@ -31,7 +29,29 @@
     name: 'confProps',
     props: [
       'shared'
-    ]
+    ],
+    data () {
+      return {
+        props: []
+      }
+    },
+    watch: {
+      'shared.ep.loading' (loading) {
+        if (!loading) {
+          this.props = this.propsArray()
+        }
+      }
+    },
+    methods: {
+      propsArray () {
+        let props = []
+        let obj = this.shared.ep.props(true)
+        Object.keys(obj).forEach(key => {
+          props.push(obj[key])
+        })
+        return props
+      }
+    }
   }
 </script>
 

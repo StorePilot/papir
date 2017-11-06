@@ -174,9 +174,9 @@ export default class Endpoint {
         console.error('Error in predefined properties')
         console.error(predefined)
       }
-      if (map !== null && typeof map !== 'undefined' && typeof map.identifier !== 'undefined') {
+      if (map !== null && typeof map !== 'undefined' && typeof map.identifier !== 'undefined' && map.identifier !== null && map.identifier !== '') {
         let mappedIdentifier = map.identifier
-        if (map.props[map.identifier] !== 'undefined') {
+        if (typeof map.props[map.identifier] !== 'undefined') {
           mappedIdentifier = map.props[map.identifier]
         }
         if (!accessor.reserved(mappedIdentifier) && typeof accessor[mappedIdentifier] !== 'undefined') {
@@ -268,10 +268,10 @@ export default class Endpoint {
     let stopLoader = (loadSlug) => {
       let index = accessor.loaders.indexOf(loadSlug)
       if (index !== -1) {
-        accessor.loaders = accessor.loaders.splice(index, 1)
+        accessor.loaders.splice(index, 1)
         accessor.loading = accessor.loaders.length > 0
       }
-      return accessor.loaders.push(loadSlug)
+      return accessor.loaders
     }
 
     /**
@@ -298,7 +298,10 @@ export default class Endpoint {
         let data = response.data // Raw from server
         let headers = response.headers // In lowercase
         try {
-          let parsed = JSON.parse(data)
+          let parsed = data
+          if (parsed.constructor !== Object && parsed.constructor !== Array) {
+            parsed = JSON.parse(parsed)
+          }
           if (!batch && !multiple) {
             // Parse Data
             response = accessor.set(parsed, false, true, key)
