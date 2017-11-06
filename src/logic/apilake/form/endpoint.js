@@ -324,9 +324,18 @@ export default class Endpoint {
               }
             })
           } else if (multiple && map !== null && typeof map !== 'undefined') {
+            if (response.config.method.toLowerCase() === 'get') {
+              accessor.children = []
+            }
             parsed.forEach(child => {
               let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, child)
-              accessor.shared.exchange(endpoint)
+              if (response.config.method.toLowerCase() === 'get') {
+                accessor.children.push(endpoint)
+              } else {
+                if (!accessor.shared.exchange(endpoint)) {
+                  accessor.children.push(endpoint)
+                }
+              }
             })
           }
           // Parse Headers
@@ -1624,8 +1633,8 @@ export default class Endpoint {
             let hook = opt.substring(index) + '}'
             let prop = hook.replace('{', '').replace('}', '')
             let slash = false
-            if (hook.indexOf('/') !== -1) {
-              prop = hook.replace('/', '')
+            if (prop.indexOf('/') !== -1) {
+              prop = prop.replace('/', '')
               slash = true
             }
             identifiers[prop] = {

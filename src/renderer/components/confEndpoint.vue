@@ -23,6 +23,9 @@
       <el-tab-pane label="Props">
         <conf-props :shared="shared"></conf-props>
       </el-tab-pane>
+      <el-tab-pane label="Children">
+        <conf-children :shared="shared"></conf-children>
+      </el-tab-pane>
       <el-tab-pane label="Data">
         <h5>
           File
@@ -199,10 +202,12 @@
 
 <script>
   import confProps from './confProps'
+  import confChildren from './confChildren'
   export default {
     name: 'confEndpoint',
     components: {
-      confProps
+      confProps,
+      confChildren
     },
     props: [
       'shared'

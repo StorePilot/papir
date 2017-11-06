@@ -71,10 +71,10 @@
             :shared="shared">
         </nav-endpoints>
       </el-col>
-      <el-col :sm="6">
+      <el-col :sm="7">
         <conf-endpoint :shared="shared"></conf-endpoint>
       </el-col>
-      <el-col :sm="8" :lg="10">
+      <el-col :sm="7" :lg="9">
         <el-row>
           <el-col :sm="24">
             <requester :shared="shared"></requester>

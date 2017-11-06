@@ -19,14 +19,16 @@
           <textarea v-else v-model="prop.value"></textarea>
         </td>
         <td>
-          <el-button
-              size="mini"
-              style="margin-bottom: 20px"
-              @click="fetch(prop)">Fetch</el-button>
-          <el-button
-              size="mini"
-              style="margin-bottom: 20px"
-              @click="save(prop)">Save</el-button>
+          <div>
+            <el-button
+                size="mini"
+                style="margin-bottom: 20px"
+                @click="fetch(prop)">Fetch</el-button>
+            <el-button
+                size="mini"
+                style="margin-bottom: 20px"
+                @click="save(prop)">Save</el-button>
+          </div>
         </td>
       </tr>
     </table>
