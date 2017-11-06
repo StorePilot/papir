@@ -134,9 +134,6 @@ export default class Prop {
           }
         ).then(response => {
           accessor.raw = response
-          console.log(response)
-          console.log(replace)
-          console.log(key)
           parent.shared.handleSuccess(response, replace, key).then(results => {
             stopLoader(loadSlug)
             resolve(accessor)
