@@ -196,7 +196,7 @@ export default class Endpoint {
     /**
      * Url Resolver
      */
-    accessor.shared.resolveUrl = (endpoint = accessor.shared.endpoint, map = accessor.shared.map, api = accessor.shared.api, args = null) => {
+    accessor.shared.resolveUrl = (endpoint = accessor.shared.endpoint, map = accessor.shared.map, api = accessor.shared.api, args = null, batch = false) => {
       let base = api !== null ? api.base : ''
       // Remove last slash if any from base
       if (base.length > 0 && base[(base.length - 1)] === '/') {
@@ -221,7 +221,9 @@ export default class Endpoint {
           key = typeof map.props[key] !== 'undefined' ? map.props[key] : key
         }
         // Replace hook with value from mapped prop
-        if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined') {
+        if (batch) {
+          path = path.replace(hook, (slash ? ('/' + key) : key))
+        } else if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined') {
           path = path.replace(hook, (slash ? '/' : '') + accessor[key].value)
         } else if (accessor.reserved(key) && typeof accessor.invalids[key] !== 'undefined') {
           path = path.replace(hook, (slash ? '/' : '') + accessor.invalids[key].value)
@@ -814,7 +816,8 @@ export default class Endpoint {
       data = null,
       upload = false,
       conf = {},
-      promise = new Promise(resolve => resolve())
+      promise = new Promise(resolve => resolve()),
+      batch = false
     ) => {
       if (canceler !== false) {
         let cancelHandler = accessor.shared.handleCancellation(cancelers[canceler])
@@ -824,7 +827,7 @@ export default class Endpoint {
       return new Promise((resolve, reject) => {
         // startLoader(method)
         let api = (accessor.shared.controller !== null && apiSlug !== null) ? accessor.shared.controller.apis[apiSlug] : accessor.shared.api
-        accessor.shared.requester[method.toLowerCase()](accessor.shared.resolveUrl(endpoint, accessor.shared.map, api, args), promise, data, upload, conf).then(response => {
+        accessor.shared.requester[method.toLowerCase()](accessor.shared.resolveUrl(endpoint, accessor.shared.map, api, args, batch), promise, data, upload, conf).then(response => {
           accessor.raw = response
           // stopLoader(method)
           resolve(response)
@@ -1202,7 +1205,9 @@ export default class Endpoint {
           false,
           {
             perform: perform
-          }
+          },
+          new Promise(resolve => resolve()),
+          true
         ).then(response => {
           accessor.shared.handleSuccess(response, replace, null, true).then(results => {
             stopLoader(loadSlug)
