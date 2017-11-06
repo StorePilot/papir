@@ -8,16 +8,22 @@
         <th>Actions</th>
       </tr>
       <tr v-for="prop in props">
-        <td>
+        <td style="font-size: .8em;">
           {{prop.key}}
         </td>
-        <td v-loading="prop.loading">
+        <td style="font-size: .8em;" v-loading="prop.loading">
           <el-input v-if="typeof prop.value === 'string'" v-model="prop.value"></el-input>
           <textarea v-else v-model="prop.value"></textarea>
         </td>
         <td>
-          <el-button style="margin-bottom: 20px" @click="prop.fetch()">Fetch</el-button>
-          <el-button style="margin-bottom: 20px" @click="prop.save()">Save</el-button>
+          <el-button
+              size="mini"
+              style="margin-bottom: 20px"
+              @click="prop.fetch()">Fetch</el-button>
+          <el-button
+              size="mini"
+              style="margin-bottom: 20px"
+              @click="prop.save()">Save</el-button>
         </td>
       </tr>
     </table>

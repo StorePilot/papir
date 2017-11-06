@@ -14,7 +14,7 @@ export default class Prop {
     accessor.value = JSON.parse(JSON.stringify(value))
     accessor.key = key
     accessor.loading = false
-    accessor.loaders = 0
+    accessor.loaders = []
 
     /**
      * Private methods
@@ -32,10 +32,10 @@ export default class Prop {
     let stopLoader = (loadSlug) => {
       let index = accessor.loaders.indexOf(loadSlug)
       if (index !== -1) {
-        accessor.loaders = accessor.loaders.splice(index, 1)
+        accessor.loaders.splice(index, 1)
         accessor.loading = accessor.loaders.length > 0
       }
-      return accessor.loaders.push(loadSlug)
+      return accessor.loaders
     }
 
     /**
@@ -69,7 +69,7 @@ export default class Prop {
      * @replace replace all properties in endpoint from response
      * @create Attempt to create if save fails (Ex.: if no id provided to endpoint)
      */
-    accessor.save = (apiSlug = parent.shared.defaultApi, args = null, replace = true, create = true) => {
+    accessor.save = (apiSlug = parent.shared.defaultApi, args = null, replace = true, create = true, perform = true) => {
       let obj = {}
       obj[key] = accessor.value
       return new Promise((resolve, reject) => {
@@ -80,9 +80,13 @@ export default class Prop {
           'PUT',
           apiSlug,
           args,
-          accessor.removeIdentifiers(
-            accessor.reverseMapping(obj)
-          )
+          parent.shared.accessor.removeIdentifiers(
+            parent.shared.accessor.reverseMapping(obj)
+          ),
+          false,
+          {
+            perform: perform
+          }
         ).then(response => {
           parent.shared.handleSuccess(response, replace, key).then(results => {
             stopLoader(loadSlug)
@@ -111,7 +115,7 @@ export default class Prop {
       })
     }
 
-    accessor.fetch = (apiSlug = parent.shared.defaultApi, args = null, replace = true) => {
+    accessor.fetch = (apiSlug = parent.shared.defaultApi, args = null, replace = true, perform = true) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'fetch'
         startLoader(loadSlug)
@@ -119,8 +123,16 @@ export default class Prop {
           loadSlug,
           'GET',
           apiSlug,
-          args
+          args,
+          null,
+          false,
+          {
+            perform: perform
+          }
         ).then(response => {
+          console.log(response)
+          console.log(replace)
+          console.log(key)
           parent.shared.handleSuccess(response, replace, key).then(results => {
             stopLoader(loadSlug)
             resolve(results)
