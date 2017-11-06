@@ -212,7 +212,7 @@ class Util {
             } else if (preKey !== null && param.indexOf(preKey) !== -1) {
               let key = param.split(splitter)[0]
               let index = key.lastIndexOf('%5B%5D')
-              key = key.substring(0, index) + '%5B' + i + '%5D' + key.substring(index + 7)
+              key = key.substring(0, index) + '%5B' + i + '%5D' + key.substring(index + 6)
               key = key.replace(/%5B%5D/g, '%5B0%5D')
               param = param.replace(preKey, key)
               i++
