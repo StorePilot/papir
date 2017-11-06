@@ -1,36 +1,44 @@
 <template>
   <div class="el-table" v-loading="shared.ep.loading">
-    <div>
+    <div style="display: block; float: left;">
       <el-button style="display: inline-block; float: left" @click="fetch(shared.ep)">Fetch All</el-button>
       <el-button style="display: inline-block; float: left" @click="save(shared.ep)">Save All</el-button>
     </div>
-    <table style="width: 100%; text-align: left">
-      <tr>
+    <table style="display: block; float: left; width: 100%; margin-top: 20px; text-align: left">
+      <tr style="width: 100%; display: inline-table">
         <th>Key</th>
         <th>Value</th>
-        <th>Actions</th>
       </tr>
-      <tr v-for="prop in props">
-        <td style="font-size: .8em;">
-          {{prop.key}}
-        </td>
-        <td style="font-size: .8em;" v-loading="prop.loading">
-          <el-input v-if="typeof prop.value === 'string'" v-model="prop.value"></el-input>
-          <textarea v-else v-model="prop.value"></textarea>
-        </td>
-        <td>
-          <div>
-            <el-button
-                size="mini"
-                style="margin-bottom: 20px"
-                @click="fetch(prop)">Fetch</el-button>
-            <el-button
-                size="mini"
-                style="margin-bottom: 20px"
-                @click="save(prop)">Save</el-button>
-          </div>
-        </td>
-      </tr>
+      <div v-for="prop in props">
+        <tr style="width: 100%; display: inline-table">
+          <td style="font-size: .8em;">
+            {{prop.key}}
+          </td>
+          <td style="font-size: .8em;" v-loading="prop.loading">
+            <el-input
+                style="float: right;"
+                v-if="typeof prop.value === 'string'"
+                v-model="prop.value"></el-input>
+            <textarea
+                style="float: right;"
+                v-else v-model="prop.value"></textarea>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <div>
+              <el-button
+                  size="mini"
+                  style="margin-bottom: 20px"
+                  @click="fetch(prop)">Fetch</el-button>
+              <el-button
+                  size="mini"
+                  style="margin-bottom: 20px"
+                  @click="save(prop)">Save</el-button>
+            </div>
+          </td>
+        </tr>
+      </div>
     </table>
   </div>
 </template>

@@ -8,6 +8,10 @@
       <el-collapse accordion>
         <el-collapse-item v-for="(child, index) in shared.ep.children" :title="String(index)">
           <table class="el-table">
+            <tr style="width: 100%; display: inline-table">
+              <th>Key</th>
+              <th>Value</th>
+            </tr>
             <div v-for="prop in propsArray(child.props(true))">
               <tr style="width: 100%; display: inline-table">
                 <td style="font-size: .8em;">
