@@ -74,7 +74,13 @@ export default class RequesterOauth extends Requester {
         data = null
       }
 
-      // 5.2 Sort arguments if required
+      // 5.2. Append index to arrays in querystring if required
+
+      if (conf.indexArrays) {
+        request.url = util.querystring.indexArrays(request.url)
+      }
+
+      // 6 Sort arguments if required
       let querystring = ''
       let sortable = []
       util.getParams(request.url).forEach(param => {
@@ -89,12 +95,6 @@ export default class RequesterOauth extends Requester {
         request.url = util.stripUri(request.url) + '?' + querystring
       } else {
         request.url = util.stripUri(request.url)
-      }
-
-      // 6. Append index to arrays in querystring if required
-
-      if (conf.indexArrays) {
-        request.url = util.querystring.indexArrays(request.url)
       }
 
       // 7. Append data to request
