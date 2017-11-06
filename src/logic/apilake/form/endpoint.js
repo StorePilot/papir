@@ -1456,7 +1456,7 @@ export default class Endpoint {
             if (typeof hook[prop] !== 'undefined' && hook[prop].value !== data[key]) {
               hook[prop].value = data[key]
               hook[prop].changed(change)
-            } else {
+            } else if (typeof hook[prop] === 'undefined') {
               hook[prop] = new Prop(accessor, prop, data[key])
             }
           }
