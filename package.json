@@ -1,6 +1,6 @@
 {
   "name": "papir",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "StorePilot",
   "description": "Rest API Modelling library and Explorer",
   "license": "ISC",
@@ -37,7 +37,7 @@
     "pack:renderer": "cross-env NODE_ENV=production webpack --progress --colors --config .electron-vue/webpack.renderer.config.js",
     "test": "npm run unit",
     "unit": "karma start test/unit/karma.conf.js",
-    "postinstall": "npm run lint:fix"
+    "postinstall": "npm install, npm run lint:fix"
   },
   "build": {
     "productName": "papir",
