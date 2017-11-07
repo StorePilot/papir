@@ -309,7 +309,8 @@ export default class Endpoint {
             response = accessor.set(parsed, false, true, key)
           } else if (batch && map !== null && typeof map !== 'undefined') {
             // Exchange all without delete
-            parsed.forEach(method => {
+            Object.keys(parsed).forEach(key => {
+              let method = parsed[key]
               if (
                 (typeof map.batch !== 'undefined' && typeof map.batch.delete !== 'undefined' && method !== map.batch.delete) ||
                 ((typeof map.batch === 'undefined' || typeof map.batch.delete === 'undefined') && method !== 'delete')
