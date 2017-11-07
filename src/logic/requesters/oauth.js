@@ -1,4 +1,3 @@
-import qs from 'qs'
 import sign from '../services/sign'
 import util from '../services/util'
 import Requester from '../services/requester'
@@ -204,7 +203,7 @@ export default class RequesterOauth extends Requester {
     }
 
     this.verifyToken = (url, token = '') => {
-      window.open(url + '?' + (token !== '' ? qs.stringify({ oauth_token: token }) : ''),
+      window.open(url + '?' + (token !== '' ? util.querystring.stringify({ oauth_token: token }) : ''),
         '_blank'
       )
     }
