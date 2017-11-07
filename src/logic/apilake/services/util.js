@@ -183,51 +183,107 @@ class Util {
           querystring = querystring.substr((qIndex + 1))
         }
         let params = querystring.split(delimiter)
-        let preKey = null
-        let filled = []
-        let i = 0
-        params.forEach(param => {
-          if (param.indexOf('[]') !== -1) {
-            if (i === 0 || param.indexOf(preKey) === -1) {
-              i = 0
-              let key = preKey = param.split(splitter)[0]
-              key = key.replace(/\[\]/g, '[0]')
-              param = param.replace(preKey, key)
-              i++
-            } else if (preKey !== null && param.indexOf(preKey) !== -1) {
-              let key = param.split(splitter)[0]
-              let index = key.lastIndexOf('[]')
-              key = key.substring(0, index) + '[' + i + ']' + key.substring(index + 3)
-              key = key.replace(/\[\]/g, '[0]')
-              param = param.replace(preKey, key)
-              i++
+        let doIndexing = (params, arrStart = '[', arrEnd = ']') => {
+          let arrUnindexed = arrStart + arrEnd
+          let indices = []
+          let prevKey = ''
+          let parsed = []
+          params.forEach(param => {
+            let key = param.split(splitter)[0]
+            let value = param.split(splitter)[1]
+            // Secure that we have indices for all arrays in param
+            while (indices.length < (key.split(arrUnindexed).length - 1)) {
+              indices.push(0) // Start indexing from 0
             }
-          } else if (param.indexOf('%5B%5D') !== -1 && indexEncodedArrays) {
-            if (i === 0 || param.indexOf(preKey) === -1) {
-              i = 0
-              let key = preKey = param.split(splitter)[0]
-              key = key.replace(/%5B%5D/g, '%5B0%5D')
-              param = param.replace(preKey, key)
-              i++
-            } else if (preKey !== null && param.indexOf(preKey) !== -1) {
-              let key = param.split(splitter)[0]
-              let index = key.lastIndexOf('%5B%5D')
-              key = key.substring(0, index) + '%5B' + i + '%5D' + key.substring(index + 6)
-              key = key.replace(/%5B%5D/g, '%5B0%5D')
-              param = param.replace(preKey, key)
-              i++
+            // Secure that indices is not more than amount of arrays
+            while (indices.length !== (key.split(arrUnindexed).length - 1)) {
+              indices.pop() // Remove indices not used
             }
-          } else {
-            i = 0
-            preKey = null
-          }
-          filled.push(param)
-        })
+            // Iterate through arrays in param
+            let count = 0 // Hold track for which array we are in
+            indices.forEach(i => {
+              let index = key.indexOf(arrUnindexed) // index position start of array in param
+              let arraySpace = (arrStart + i + arrEnd).length // space used by array
+              let endIndex = index + arraySpace // index position end of array in param
+              if (
+                key.replace(arrUnindexed, arrStart + i + arrEnd).substring(0, endIndex) === prevKey.substring(0, endIndex) &&
+                key.replace(arrUnindexed, arrStart + i + arrEnd).indexOf(arrUnindexed) !== -1
+              ) {
+                // param is equal to prev at this index and has more unindexed arrays
+                key = key.replace(arrUnindexed, arrStart + i + arrEnd)
+              } else if (
+                key.replace(arrUnindexed, arrStart + i + arrEnd).substring(0, endIndex) === prevKey.substring(0, endIndex) &&
+                key.replace(arrUnindexed, arrStart + i + arrEnd).indexOf(arrUnindexed) === -1
+              ) {
+                if (key.length > (index + arrUnindexed.length)) {
+                  // param has more indexed arrays after this index
+                  let increment = false
+                  parsed.forEach(parse => {
+                    let parseKey = parse.split(splitter)[0]
+                    if (key.substring((endIndex - 1)) === parseKey.substring(endIndex)) {
+                      // keystring after this array index is equal to some prev
+                      if (key.substring(0, index) === parseKey.substring(0, index)) {
+                        // keystring before this array index is equal to some prev
+                        increment = true
+                      }
+                    }
+                  })
+                  if (increment) {
+                    i++
+                  }
+                } else {
+                  // this is the last element on key
+                  i++
+                }
+                key = key.replace(arrUnindexed, arrStart + i + arrEnd)
+              } else {
+                // param is not equal to prev param at this index
+                i = 0
+                key = key.replace(arrUnindexed, arrStart + i + arrEnd)
+                // if param matches other parsed params at this index, increment prev array +1 from match
+                parsed.forEach(parse => {
+                  if (parse.substring(0, endIndex) === key.substring(0, endIndex)) {
+                    let subparse = parse.substring(0, parse.lastIndexOf(arrStart + i + arrEnd))
+                    let start = subparse.lastIndexOf(arrStart)
+                    let end = subparse.lastIndexOf(arrEnd)
+                    let preIndex = Number(key.substring((start + 1), end))
+                    // Find last array before current index of param where array is indexed by number
+                    while (subparse.lastIndexOf(arrStart) !== -1 && isNaN(preIndex) && end > start && start !== -1) {
+                      subparse = subparse.substring(0, subparse.lastIndexOf(arrStart))
+                      start = subparse.lastIndexOf(arrStart)
+                      end = subparse.lastIndexOf(arrEnd)
+                      preIndex = Number(key.substring((start + 1), end))
+                    }
+                    if (isNaN(preIndex)) {
+                      // No other arrays before this index is indexed by number, increment last '[' + i + ']'
+                      key = key.substring(0, key.lastIndexOf(arrStart + i + arrEnd)) + arrStart + (i + 1) + arrEnd
+                      i++
+                    } else {
+                      // preIndex should increment
+                      key = key.substring(0, (start + 1)) + (preIndex + 1) + key.substring(end)
+                      i = 0
+                      indices[(count - 1)] = (preIndex + 1) // update prev indice
+                    }
+                  }
+                })
+              }
+              indices[count] = i
+              count++
+            })
+            prevKey = key
+            parsed.push(key + (param.split(splitter).length > 1 ? (splitter + (typeof value !== 'undefined' ? value : '')) : ''))
+          })
+          return parsed
+        }
         querystring = preserved
-        filled.forEach(param => {
+        let parsed = doIndexing(params)
+        if (indexEncodedArrays) {
+          parsed = doIndexing(params, '%5B', '%5D')
+        }
+        parsed.forEach(param => {
           querystring += param + delimiter
         })
-        return filled.length > 0 ? querystring.slice(0, -1) : querystring
+        return parsed.length > 0 ? querystring.slice(0, -1) : querystring
       },
       /**
        * Encode arguments after first divider until second divider
