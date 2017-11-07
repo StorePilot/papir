@@ -59,6 +59,7 @@ class Util {
        * @param options.protocol: String URL / Percentage encode protocol. options [ 'rfc3986', 'rfc1738' ]
        * @param options.dateFormat: String @see http://momentjs.com
        * @param options.keepEmpty: boolean Keep or remove keys with empty values
+       * @param first: boolean
        * @returns querystring - Ex.: 'name=val1&name2[]=val2&name2[]=val3&name3[name4]=val4&name3[name5][]=val5'
        */
       stringify: (value = null, options, first = true) => {
@@ -73,6 +74,7 @@ class Util {
           dotNotation: false,
           encodeNames: true,
           encodeValues: true,
+          indexArrays: true,
           excludes: [], // At first level
           includes: [], // At first level. includes overrides excludes
           arrayIndexOpen: '[',
@@ -113,11 +115,13 @@ class Util {
             // date
             value = moment(value).format(options.dateFormat)
           } else if (value.constructor === Array && name !== null) {
+            let i = 0
             value.forEach(val => {
-              let arrayIdentifier = (options.arrayIndexOpen + options.arrayIndexClose)
+              let arrayIdentifier = (options.arrayIndexOpen + (options.indexArrays ? i : '') + options.arrayIndexClose)
               querystring += this.querystring.stringify(val, Object.assign(options, {
                 name: name + (options.encodeNames ? encode.encode(arrayIdentifier, options.protocol, options.encodeNull) : arrayIdentifier)
               }), false)
+              i++
             })
             // Array
           } else if (value.constructor === Object) {
@@ -168,6 +172,7 @@ class Util {
       },
       /**
        *
+       * @see https://jsfiddle.net/b4su0jvs/48/
        * @param querystring
        * @param delimiter
        * @param splitter

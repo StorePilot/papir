@@ -68,6 +68,7 @@ export default class RequesterOauth extends Requester {
           dotNotation: false,
           encodeNames: true,
           encodeValues: true,
+          indexArrays: true,
           excludes: [], // At first level
           includes: [] // At first level. includes overrides excludes
         })
