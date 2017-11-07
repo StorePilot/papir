@@ -146,10 +146,10 @@ class Util {
             })
             // Object
           } else {
-            console.error({
-              message: 'Uknown datatype. Could not stringify value to querystring',
+            /* console.error({
+              message: 'Unknown datatype. Could not stringify value to querystring',
               data: options
-            })
+            }) */
             error = true
             // Unknown
           }

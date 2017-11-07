@@ -6,7 +6,7 @@
     </div>
     <div style="display: block; float: left; width: 100%; margin-top: 20px;">
       <el-collapse accordion>
-        <el-collapse-item v-for="(child, index) in shared.ep.children" :title="String(index)">
+        <el-collapse-item v-for="(child, index) in shared.ep.children" :key="String(index)" :title="String(index)">
           <table class="el-table">
             <tr style="width: 100%; display: inline-table">
               <th>Key</th>
