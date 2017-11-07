@@ -4,7 +4,7 @@
   "author": "StorePilot",
   "description": "Rest API Modelling library and Explorer",
   "license": "ISC",
-  "main": "./src/logic/papir.js",
+  "main": "./dist/electron/main.js",
   "homepage": "https://github.com/StorePilot/papir#readme",
   "repository": {
     "type": "git",
