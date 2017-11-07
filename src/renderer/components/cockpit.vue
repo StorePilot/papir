@@ -294,6 +294,8 @@
         window.open(this.shared.request.url)
       },
       fire () {
+        let ep = this.genEndpoint(this.config)
+        this.genRequest(this.shared.method, ep)
         this.axios.request(this.shared.request).then(response => {
           try {
             this.shared.response = JSON.parse(response)
