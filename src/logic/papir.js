@@ -12,7 +12,7 @@ class Papir {
     this.Requester = Requester
     // Vue integration
     this.install = (Vue, options = {}) => {
-      Vue.prototype.$al = {
+      Vue.prototype.$pap = {
         controller: new Controller(options),
         Endpoint: Endpoint,
         Requester: Requester
