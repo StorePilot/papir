@@ -59,6 +59,8 @@
       <el-col :sm="3" :lg="2">
         <nav-apis
             @save="save"
+            @loadApis="loadApis"
+            :conf="apiConfigs"
             :shared="shared">
         </nav-apis>
       </el-col>
@@ -204,51 +206,14 @@
         if (this.shared.api === null) {
           this.shared.api = this.shared.exampleApi
         }
-        let clone = JSON.parse(JSON.stringify(this.shared.api))
-        clone.mappings = {}
-        this.shared.api.mappings.forEach(endpoint => {
-          endpoint = JSON.parse(JSON.stringify(endpoint))
-          let argsClone = JSON.parse(JSON.stringify(endpoint.args))
-          endpoint.args = {}
-          if (argsClone.constructor === Array) {
-            argsClone.forEach(arg => {
-              endpoint.args[arg.key] = arg.value
-            })
-          }
-          let batchClone = JSON.parse(JSON.stringify(endpoint.batch))
-          endpoint.batch = {}
-          if (batchClone.constructor === Array) {
-            batchClone.forEach(batch => {
-              endpoint.batch[batch.key] = batch.value
-            })
-          }
-          let propsClone = JSON.parse(JSON.stringify(endpoint.props))
-          endpoint.props = {}
-          if (propsClone.constructor === Array) {
-            propsClone.forEach(prop => {
-              endpoint.props[prop.key] = prop.value
-            })
-          }
-          let headersClone = JSON.parse(JSON.stringify(endpoint.headers))
-          endpoint.headers = {}
-          if (headersClone.constructor === Array) {
-            headersClone.forEach(header => {
-              endpoint.headers[header.key] = header.value
-            })
-          }
-          let endpointClone = JSON.parse(JSON.stringify(endpoint))
-          delete endpointClone.name
-
-          clone.mappings[endpoint.name] = endpointClone
+        return this.genConfig(this.shared.api)
+      },
+      apiConfigs () {
+        let configs = []
+        this.shared.apis.forEach(api => {
+          configs.push(this.genConfig(api))
         })
-        let headers = JSON.parse(JSON.stringify(clone.config.headers))
-        clone.config.headers = {}
-        if (headers.constructor === Array) {
-          headers.forEach(arg => {
-            clone.config.headers[arg.key] = arg.value
-          })
-        }
-        return clone
+        return configs
       }
     },
     created () {
@@ -345,7 +310,7 @@
       },
       genEndpoint (val) {
         let api = JSON.parse(JSON.stringify(val))
-        let controller = this.$al.controller
+        let controller = this.$pap.controller
         controller.apis[api.slug] = api
         if (api.default || controller.default === null) {
           controller.default = api.slug
@@ -356,14 +321,14 @@
         ) {
           api.requester = new controller.requesters[api.requester](api.config)
         } else {
-          api.requester = new this.$al.Requester(api.config)
+          api.requester = new this.$pap.Requester(api.config)
         }
         let endpoint = this.shared.endpoint === null ? '' : this.shared.endpoint.name
-        return (this.shared.ep = new this.$al.Endpoint(endpoint, controller, api.slug))
+        return (this.shared.ep = new this.$pap.Endpoint(endpoint, controller, api.slug))
       },
       genRequest (method, endpoint) {
         let apiSlug = null
-        let args = this.shared.endpoint.args
+        let args = this.shared.endpoint === null ? [] : this.shared.endpoint.args
         let replace = false
         let perform = false
         let create = true
@@ -442,6 +407,126 @@
               })
               break
           }
+        }
+      },
+      genConfig (api) {
+        let clone = JSON.parse(JSON.stringify(api))
+        clone.mappings = {}
+        api.mappings.forEach(endpoint => {
+          endpoint = JSON.parse(JSON.stringify(endpoint))
+          let argsClone = JSON.parse(JSON.stringify(endpoint.args))
+          endpoint.args = {}
+          if (argsClone.constructor === Array) {
+            argsClone.forEach(arg => {
+              endpoint.args[arg.key] = arg.value
+            })
+          }
+          let batchClone = JSON.parse(JSON.stringify(endpoint.batch))
+          endpoint.batch = {}
+          if (batchClone.constructor === Array) {
+            batchClone.forEach(batch => {
+              endpoint.batch[batch.key] = batch.value
+            })
+          }
+          let propsClone = JSON.parse(JSON.stringify(endpoint.props))
+          endpoint.props = {}
+          if (propsClone.constructor === Array) {
+            propsClone.forEach(prop => {
+              endpoint.props[prop.key] = prop.value
+            })
+          }
+          let headersClone = JSON.parse(JSON.stringify(endpoint.headers))
+          endpoint.headers = {}
+          if (headersClone.constructor === Array) {
+            headersClone.forEach(header => {
+              endpoint.headers[header.key] = header.value
+            })
+          }
+          let endpointClone = JSON.parse(JSON.stringify(endpoint))
+          delete endpointClone.name
+
+          clone.mappings[endpoint.name] = endpointClone
+        })
+        let headers = JSON.parse(JSON.stringify(clone.config.headers))
+        clone.config.headers = {}
+        if (headers.constructor === Array) {
+          headers.forEach(arg => {
+            clone.config.headers[arg.key] = arg.value
+          })
+        }
+        return clone
+      },
+      revertConfig (api) {
+        let clone = JSON.parse(JSON.stringify(api))
+        clone.mappings = []
+        Object.keys(api.mappings).forEach(key => {
+          let endpoint = JSON.parse(JSON.stringify(api.mappings[key]))
+          let argsClone = JSON.parse(JSON.stringify(endpoint.args))
+          endpoint.args = []
+          if (argsClone.constructor === Object) {
+            Object.keys(argsClone).forEach(key => {
+              endpoint.args.push({
+                key: key,
+                value: argsClone[key]
+              })
+            })
+          }
+          let batchClone = JSON.parse(JSON.stringify(endpoint.batch))
+          endpoint.batch = []
+          if (batchClone.constructor === Object) {
+            Object.keys(batchClone).forEach(key => {
+              endpoint.batch.push({
+                key: key,
+                value: batchClone[key]
+              })
+            })
+          }
+          let propsClone = JSON.parse(JSON.stringify(endpoint.props))
+          endpoint.props = []
+          if (propsClone.constructor === Object) {
+            Object.keys(propsClone).forEach(key => {
+              endpoint.props.push({
+                key: key,
+                value: propsClone[key]
+              })
+            })
+          }
+          let headersClone = JSON.parse(JSON.stringify(endpoint.props))
+          endpoint.headers = []
+          if (headersClone.constructor === Object) {
+            Object.keys(headersClone).forEach(key => {
+              endpoint.headers.push({
+                key: key,
+                value: headersClone[key]
+              })
+            })
+          }
+          endpoint.name = key
+        })
+        let headers = JSON.parse(JSON.stringify(clone.config.headers))
+        clone.config.headers = []
+        if (headers.constructor === Object) {
+          Object.keys(headers).forEach(key => {
+            clone.config.headers.push({
+              key: key,
+              value: headers[key]
+            })
+          })
+        }
+        return clone
+      },
+      loadApis (apis) {
+        this.shared.apis = []
+        this.shared.api = null
+        this.shared.endpoint = null
+        apis.forEach(api => {
+          this.shared.apis.push(this.revertConfig(api))
+        })
+        if (apis.length > 1) {
+          this.shared.api = this.shared.apis[0]
+        }
+        if (this.shared.api !== null && this.shared.api.mappings.length > 1) {
+          this.shared.endpoint = this.shared.api.mappings[0]
         }
       }
     }

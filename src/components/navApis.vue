@@ -32,6 +32,29 @@
           Add
         </el-button>
       </el-menu-item>
+      <div style="position: absolute; width: 100%; bottom: 0">
+        <el-menu-item index="none">
+          <el-upload
+              :on-change="loadFile"
+              action="#">
+            <el-button style="float: left" type="info">Load</el-button>
+          </el-upload>
+        </el-menu-item>
+        <el-menu-item index="none">
+          <el-button
+              type="info"
+              @click="exportFile">
+            Export
+          </el-button>
+        </el-menu-item>
+        <el-menu-item index="none">
+          <el-button
+              type="info"
+              @click="copyJSON">
+            To Clipboard
+          </el-button>
+        </el-menu-item>
+      </div>
     </el-menu>
     <context-menu
         class="context-menu"
@@ -50,7 +73,8 @@
       draggable
     },
     props: [
-      'shared'
+      'shared',
+      'conf'
     ],
     data () {
       return {
@@ -80,6 +104,54 @@
           this.shared.apis.splice(index, 1)
         }
         this.$emit('save')
+      },
+      loadFile (file) {
+        let scope = this
+        let reader = new FileReader()
+        reader.onload = (e) => {
+          let data = JSON.parse(e.target.result)
+          scope.$emit('loadApis', data)
+        }
+        reader.readAsText(file.raw)
+      },
+      exportFile () {
+        let data = JSON.stringify(this.conf)
+        let file = new Blob([data], {type: 'application/json'})
+        let a = document.createElement('a')
+        let url = URL.createObjectURL(file)
+        a.href = url
+        a.download = 'apis.json'
+        document.body.appendChild(a)
+        a.click()
+        setTimeout(() => {
+          document.body.removeChild(a)
+          window.URL.revokeObjectURL(url)
+        }, 0)
+      },
+      copyJSON () {
+        let scope = this
+        let data = JSON.stringify(this.conf)
+        if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
+          let textarea = document.createElement('textarea')
+          textarea.textContent = data
+          textarea.style.position = 'fixed' // Prevent scrolling to bottom of page in MS Edge.
+          document.body.appendChild(textarea)
+          textarea.select()
+          try {
+            document.execCommand('copy') // Security exception may be thrown by some browsers.
+            scope.$message({
+              type: 'info',
+              message: 'Copied to clipboard'
+            })
+          } catch (ex) {
+            scope.$message({
+              type: 'error',
+              message: 'Your ui doesnt support copy to clipboard'
+            })
+          } finally {
+            document.body.removeChild(textarea)
+          }
+        }
       }
     }
   }
