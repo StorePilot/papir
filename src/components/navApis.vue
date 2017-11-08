@@ -5,7 +5,7 @@
         default-active="0"
         class="el-menu-vertical-demo"
         theme="dark">
-      <h4 style="color: white; margin: 20px;">API's</h4>
+      <h5 style="color: white; margin: 20px;">API's</h5>
       <draggable
           @change="$emit('save')"
           v-model="shared.apis"

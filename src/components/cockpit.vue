@@ -64,7 +64,7 @@
             :shared="shared">
         </nav-apis>
       </el-col>
-      <el-col :sm="4">
+      <el-col :sm="5">
         <conf-api :api="shared.api"></conf-api>
       </el-col>
       <el-col :sm="3" :lg="2">
@@ -76,7 +76,7 @@
       <el-col :sm="7">
         <conf-endpoint :shared="shared"></conf-endpoint>
       </el-col>
-      <el-col :sm="7" :lg="9">
+      <el-col :sm="6" :lg="8">
         <el-row>
           <el-col :sm="24">
             <requester :shared="shared"></requester>
