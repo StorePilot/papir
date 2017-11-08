@@ -1,0 +1,224 @@
+[
+  {
+    "@about": "Example api v1",
+    "slug": "ex1",
+    "default": true,
+    "base": "",
+    "methods": [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE",
+      "OPTIONS"
+    ],
+    "requester": "oauth",
+    "config": {
+      "authentication": "oauth",
+      "version": "1.0a",
+      "type": "one_legged",
+      "encryption": "HMAC-SHA1",
+      "addDataToQuery": true,
+      "addAuthHeaders": false,
+      "dualAuth": false,
+      "algorithm": "HMAC-SHA1",
+      "key": "",
+      "secret": "",
+      "token": {
+        "key": "",
+        "secret": ""
+      },
+      "nonce": "",
+      "nonceLength": 6,
+      "timestampLength": 30,
+      "indexArrays": true,
+      "emptyParams": false,
+      "requester": null,
+      "base64": true,
+      "ampersand": true,
+      "sort": true,
+      "taleNonce": "",
+      "get": {},
+      "post": {},
+      "put": {
+        "dualAuth": true
+      },
+      "patch": {},
+      "delete": {},
+      "head": {},
+      "trace": {},
+      "connect": {},
+      "options": {}
+    },
+    "@note": "mappings.x.props.key = from (primary), mappings.x.props.key.value = to (map)",
+    "mappings": {
+      "endpoint1": {
+        "identifier": "id",
+        "@note": "{/id} is hooked to primary property and not map",
+        "endpoint": "/my_endpoint1{/id}",
+        "args": {
+          "search": "search"
+        },
+        "props": {
+          "id": "id"
+        }
+      },
+      "endpoint2": {
+        "@note": "{batch} is hooked to primary property and not map",
+        "multiple": true,
+        "child": "endpoint1",
+        "endpoint": "/my_endpoint1/{batch}",
+        "args": {
+          "limit": 100,
+          "search": "search"
+        },
+        "batch": {
+          "save": "update",
+          "create": "create",
+          "delete": "delete"
+        },
+        "headers": {
+          "x-total": "total",
+          "x-totalpages": "pages"
+        }
+      },
+      "endpoint3": {
+        "identifier": "id",
+        "@note": "identifier will be replaced by random generated id. @todo - {index} could later be an option for creationIdentifier",
+        "creationIdentifier": "meta_data=[{\"key\": \"batch_create_id\", \"value\": \"identifier\" }]",
+        "@note": "{/id} is hooked to primary property and not map",
+        "endpoint": "/my_endpoint3/{parent}/my_sub_endpoint3{/id}",
+        "args": {
+          "search": "search"
+        },
+        "props": {
+          "id": "id"
+        }
+      },
+      "endpoint4": {
+        "@note": "{/id} is hooked to primary property and not map",
+        "multiple": true,
+        "child": "endpoint3",
+        "endpoint": "/my_endpoint3/{parent}/my_sub_endpoint3/{batch}",
+        "args": {
+          "search": "search"
+        },
+        "batch": {
+          "save": "update",
+          "create": "create",
+          "delete": "delete"
+        }
+      }
+    }
+  },
+  {
+    "@about": "Example api v2",
+    "slug": "ex2",
+    "default": false,
+    "base": "",
+    "methods": [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE",
+      "OPTIONS"
+    ],
+    "requester": "oauth",
+    "config": {
+      "authentication": "oauth",
+      "version": "1.0a",
+      "type": "one_legged",
+      "encryption": "HMAC-SHA1",
+      "addDataToQuery": true,
+      "addAuthHeaders": false,
+      "dualAuth": false,
+      "algorithm": "HMAC-SHA1",
+      "key": "",
+      "secret": "",
+      "token": {
+        "key": "",
+        "secret": ""
+      },
+      "nonce": "",
+      "nonceLength": 6,
+      "timestampLength": 30,
+      "indexArrays": true,
+      "emptyParams": false,
+      "requester": null,
+      "base64": true,
+      "ampersand": true,
+      "sort": true,
+      "taleNonce": "",
+      "get": {},
+      "post": {},
+      "put": {
+        "dualAuth": true
+      },
+      "patch": {},
+      "delete": {},
+      "head": {},
+      "trace": {},
+      "connect": {},
+      "options": {}
+    },
+    "@note": "mappings.x.props.key = from (primary), mappings.x.props.key.value = to (map)",
+    "mappings": {
+      "endpoint1": {
+        "identifier": "id",
+        "@note": "{/id} is hooked to primary property and not map",
+        "endpoint": "/my_endpoint1{/id}",
+        "args": {
+          "search": "search"
+        },
+        "props": {
+          "id": "id"
+        }
+      },
+      "endpoint2": {
+        "@note": "{batch} is hooked to primary property and not map",
+        "multiple": true,
+        "child": "endpoint1",
+        "endpoint": "/my_endpoint1/{batch}",
+        "args": {
+          "limit": 100,
+          "search": "search"
+        },
+        "batch": {
+          "save": "update",
+          "create": "create",
+          "delete": "delete"
+        },
+        "headers": {
+          "x-total": "total",
+          "x-totalpages": "pages"
+        }
+      },
+      "endpoint3": {
+        "identifier": "id",
+        "@note": "identifier will be replaced by random generated id. @todo - {index} could later be an option for creationIdentifier",
+        "creationIdentifier": "meta_data=[{\"key\": \"batch_create_id\", \"value\": \"identifier\" }]",
+        "@note": "{/id} is hooked to primary property and not map",
+        "endpoint": "/my_endpoint3/{parent}/my_sub_endpoint3{/id}",
+        "args": {
+          "search": "search"
+        },
+        "props": {
+          "id": "id"
+        }
+      },
+      "endpoint4": {
+        "@note": "{/id} is hooked to primary property and not map",
+        "multiple": true,
+        "child": "endpoint3",
+        "endpoint": "/my_endpoint3/{parent}/my_sub_endpoint3/{batch}",
+        "args": {
+          "search": "search"
+        },
+        "batch": {
+          "save": "update",
+          "create": "create",
+          "delete": "delete"
+        }
+      }
+    }
+  }
+]

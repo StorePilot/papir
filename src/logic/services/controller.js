@@ -1,31 +1,29 @@
-import fs from 'fs'
-import path from 'path'
 import Requester from './requester'
+import RequesterOauth from '../requesters/oauth'
 
 /**
  * Controller
  */
 export class Controller {
-  constructor (serverUrl = null) {
+  constructor (options = {}) {
+    options = Object.assign({
+      serverBase: null,
+      apis: require('../apis.json')
+    }, options)
     this.default = null
     this.requesters = {}
     this.apis = {}
-    this.server = serverUrl
+    this.server = options.serverBase
 
-    // Load Requesters
-    fs.readdirSync(path.join(__dirname, '../requesters/')).forEach(file => {
-      let Requester = require('../requesters/' + file).default
-      let requester = new Requester()
-      this.requesters[requester.requester] = Requester
-    })
+    // Load requesters
+    this.requesters.oauth = RequesterOauth
 
     // Load and configure Apis
-    fs.readdirSync(path.join(__dirname, '../apis/')).forEach(file => {
-      let api = require('../apis/' + file)
+    options.apis.forEach(api => {
       if (api.default || this.default === null) {
         this.default = api.slug
       }
-      if (this.server !== null) {
+      if (this.server !== null && (typeof api.base === 'undefined' || api.base === '')) {
         api.base = this.server
       }
       if (
@@ -41,4 +39,4 @@ export class Controller {
   }
 }
 
-export default new Controller()
+export default Controller

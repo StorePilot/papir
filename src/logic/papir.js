@@ -1,4 +1,4 @@
-import controller from './services/controller'
+import Controller from './services/controller'
 import Requester from './services/requester'
 import Endpoint from './form/endpoint'
 
@@ -6,14 +6,14 @@ import Endpoint from './form/endpoint'
  * Papir
  */
 class Papir {
-  constructor () {
-    this.controller = controller
+  constructor (options = {}) {
+    this.controller = new Controller(options)
     this.Endpoint = Endpoint
     this.Requester = Requester
     // Vue integration
-    this.install = (Vue) => {
+    this.install = (Vue, options = {}) => {
       Vue.prototype.$al = {
-        controller: controller,
+        controller: new Controller(options),
         Endpoint: Endpoint,
         Requester: Requester
       }
