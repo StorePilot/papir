@@ -1657,6 +1657,30 @@ export default class Endpoint {
       }
       return identifiers
     }
+
+    /**
+     * Sort children
+     * @param key
+     */
+    accessor.sort = (key = 'menu_order') => {
+      let compare = (a, b) => {
+        if (!accessor.reserved(key)) {
+          if (a[key].value < b[key].value) {
+            return -1
+          } else if (a[key].value > b[key].value) {
+            return 1
+          }
+        } else {
+          if (a.invalids[key].value < b.invalids[key].value) {
+            return -1
+          } else if (a.invalids[key].value > b.invalids[key].value) {
+            return 1
+          }
+        }
+        return 0
+      }
+      accessor.children.sort(compare)
+    }
     init() // Run at Construction
   }
 }
