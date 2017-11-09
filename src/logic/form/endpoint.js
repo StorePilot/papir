@@ -876,7 +876,7 @@ export default class Endpoint {
         ).then(response => {
           accessor.shared.handleSuccess(response, replace).then(results => {
             stopLoader(loadSlug)
-            resolve(results)
+            resolve(accessor)
           }).catch(error => {
             stopLoader(loadSlug)
             reject(error)
@@ -928,7 +928,7 @@ export default class Endpoint {
           ).then(response => {
             accessor.shared.handleSuccess(response, replace).then(response => {
               stopLoader(loadSlug)
-              resolve(response)
+              resolve(accessor)
             }).catch(error => {
               stopLoader(loadSlug)
               reject(error)
@@ -938,7 +938,7 @@ export default class Endpoint {
             if (create) {
               accessor.create(apiSlug, args, replace, true, perform).then(response => {
                 stopLoader(loadSlug)
-                resolve(response)
+                resolve(accessor)
               }).catch(error => {
                 stopLoader(loadSlug)
                 reject(error)
@@ -986,7 +986,7 @@ export default class Endpoint {
           ).then(response => {
             accessor.shared.handleSuccess(response, replace).then(results => {
               stopLoader(loadSlug)
-              resolve(results)
+              resolve(accessor)
             }).catch(error => {
               stopLoader(loadSlug)
               reject(error)
@@ -1030,7 +1030,7 @@ export default class Endpoint {
           ).then(response => {
             accessor.shared.handleSuccess(response, replace).then(results => {
               stopLoader(loadSlug)
-              resolve(results)
+              resolve(accessor)
             }).catch(error => {
               stopLoader(loadSlug)
               reject(error)
@@ -1072,7 +1072,7 @@ export default class Endpoint {
         ).then(response => {
           accessor.shared.handleSuccess(response, replace).then(results => {
             stopLoader(loadSlug)
-            resolve(results)
+            resolve(accessor)
           }).catch(error => {
             stopLoader(loadSlug)
             reject(error)
@@ -1212,7 +1212,7 @@ export default class Endpoint {
         ).then(response => {
           accessor.shared.handleSuccess(response, replace, null, true).then(results => {
             stopLoader(loadSlug)
-            resolve(results)
+            resolve(accessor)
           }).catch(error => {
             stopLoader(loadSlug)
             reject(error)
