@@ -1447,7 +1447,7 @@ export default class Endpoint {
             hook[prop] = new Prop(accessor, prop, data[key].value)
           } else if (!accessor.reserved(prop) && (updateKey === null || prop === updateKey) && hook[prop].value !== data[key].value) {
             hook[prop].value = data[key].value
-            hook[prop].changed(change ? data[key].changed() : false)
+            hook[prop].changed(change ? (typeof data[key].changed === 'function' ? data[key].changed() : false) : false)
           }
           if (key === 'invalids') {
             Object.keys(data[key]).forEach(prop => {
@@ -1455,7 +1455,7 @@ export default class Endpoint {
                 hook[key][prop] = new Prop(accessor, prop, data[key].value)
               } else if ((updateKey === null || prop === updateKey) && hook[key][prop].value !== data[key][prop].value) {
                 hook[key][prop].value = data[key][prop].value
-                hook[key][prop].changed(change ? data[key][prop].changed() : false)
+                hook[key][prop].changed(change ? (typeof data[key][prop].changed === 'function' ? data[key][prop].changed() : false) : false)
               }
             })
           }
