@@ -1442,13 +1442,17 @@ export default class Endpoint {
         let hook = accessor
         let prop = key
         if (!raw) {
-          if (!accessor.reserved(prop) && (updateKey === null || prop === updateKey) && hook[prop].value !== data[key].value) {
+          if (!accessor.reserved(prop) && typeof hook[prop] === 'undefined' && (updateKey === null || prop === updateKey)) {
+            hook[prop] = new Prop(accessor, prop, data[key].value)
+          } else if (!accessor.reserved(prop) && (updateKey === null || prop === updateKey) && hook[prop].value !== data[key].value) {
             hook[prop].value = data[key].value
             hook[prop].changed(change ? data[key].changed() : false)
           }
           if (key === 'invalids') {
             Object.keys(data[key]).forEach(prop => {
-              if ((updateKey === null || prop === updateKey) && hook[key][prop].value !== data[key][prop].value) {
+              if (typeof hook[key][prop] === 'undefined' && (updateKey === null || prop === updateKey)) {
+                hook[key][prop] = new Prop(accessor, prop, data[key].value)
+              } else if ((updateKey === null || prop === updateKey) && hook[key][prop].value !== data[key][prop].value) {
                 hook[key][prop].value = data[key][prop].value
                 hook[key][prop].changed(change ? data[key][prop].changed() : false)
               }

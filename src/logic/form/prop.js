@@ -11,7 +11,15 @@ export default class Prop {
     /**
      * Public Variables
      */
-    accessor.value = JSON.parse(JSON.stringify(value))
+    try {
+      accessor.value = JSON.parse(JSON.stringify(value))
+    } catch (e) {
+      try {
+        accessor.value = value.clone()
+      } catch (e) {
+        accessor.value = value
+      }
+    }
     accessor.key = key
     accessor.loading = false
     accessor.loaders = []
