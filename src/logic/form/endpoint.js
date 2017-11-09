@@ -76,6 +76,7 @@ export default class Endpoint {
         'raw',
         'headers',
         'invalids',
+        'exchange',
         'reserved'
       ]
     }
@@ -317,12 +318,12 @@ export default class Endpoint {
               ) {
                 method.forEach(child => {
                   let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, child)
-                  accessor.shared.exchange(endpoint)
+                  accessor.exchange(endpoint)
                 })
               } else {
                 method.forEach(child => {
                   let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, child)
-                  accessor.shared.exchange(endpoint, false, true)
+                  accessor.exchange(endpoint, false, true)
                 })
               }
             })
@@ -335,7 +336,7 @@ export default class Endpoint {
               if (response.config.method.toLowerCase() === 'get') {
                 accessor.children.push(endpoint)
               } else {
-                if (!accessor.shared.exchange(endpoint)) {
+                if (!accessor.exchange(endpoint)) {
                   accessor.children.push(endpoint)
                 }
               }
@@ -421,7 +422,7 @@ export default class Endpoint {
      * Exchange endpoint in accessor.children with match from input
      * @returns Endpoint (exchanged) | Endpoint.children (On Remove) | false (If no match found)
      */
-    accessor.shared.exchange = (endpoint, reliable = false, remove = false, map = accessor.shared.map) => {
+    accessor.exchange = (endpoint, reliable = false, remove = false, map = accessor.shared.map) => {
       // @note - This could be more heavy and alot slower
       let smartFind = (endpoint) => {
         // Reliable.
