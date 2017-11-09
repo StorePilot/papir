@@ -77,6 +77,7 @@ export default class Endpoint {
         'headers',
         'invalids',
         'exchange',
+        'sort',
         'reserved'
       ]
     }
