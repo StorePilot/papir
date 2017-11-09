@@ -1,5 +1,6 @@
 import util from './util'
 import axios from 'axios'
+import sign from './sign'
 
 /**
  * Requester
@@ -26,6 +27,7 @@ export default class Requester {
       token: { key: '', secret: '' },
       nonce: '',
       nonceLength: 6,
+      nonceTale: '',
       timestampLength: 30,
       indexArrays: true,
       emptyParams: false,
@@ -33,9 +35,6 @@ export default class Requester {
       base64: true,
       ampersand: true,
       sort: true,
-      taleBefore: '', // Queryparams which will be added at the end of url, after all is set, before nonce
-      taleNonce: '', // @note: Ex. To use for nonce through cookies: '_wpnonce=wcApiSettings.nonce'
-      taleAfter: '', // Queryparams which will be added at the end of url, after all is set, after nonce
       // Conf specific per method type. (Same Options as above)
       get: {},
       post: {},
@@ -315,18 +314,35 @@ export default class Requester {
 
       // 11. Authorize
 
-      // No authorization by default
+      if (conf.authentication === 'oauth') {
+        // OAUTH
 
-      // 12. Append argument to querystring after request is made. Ex. for cookie authentication
-      // @todo - Make own requester for cookie authentication
+        // 1. Prepare configuration to be signed
 
-      request = this.makeTale(request, conf)
+        conf.url = request.url
+        conf.method = request.method
 
-      // 13. Make request abortable
+        // 2. If authentication should be applied to querystring
+
+        if (conf.authQuery) {
+          request.url = util.stripUri(request.url) + '?' + sign.gen(conf).string
+        }
+
+        // 3. If authentication should be applied to header
+
+        if (conf.authHeader) {
+          request.headers['Authorization'] = sign.gen(conf).header
+        }
+      } else if (conf.authentication === 'nonce') {
+        // ADD TOKEN / NONCE AT END OF QUERYSTRING
+        request = this.makeTale(request, conf)
+      }
+
+      // 12. Make request abortable
 
       request = this.makeAbortable(request, abortPromise)
 
-      // 14. Transform response
+      // 13. Transform response
 
       // Set response type ['arraybuffer', 'blob', 'document', 'json', 'text', 'stream']
       request.responseType = conf.responseType
@@ -336,12 +352,12 @@ export default class Requester {
         return response
       }
 
-      // 15. If request should be applied, perform and return
+      // 14. If request should be applied, perform and return
       if (conf.perform) {
         return axios.request(request)
       }
 
-      // 16. If only the axios config object is needed, return resolved promise
+      // 15. If only the axios config object is needed, return resolved promise
       return new Promise(resolve => {
         resolve(request)
       })
@@ -360,16 +376,9 @@ export default class Requester {
     }
 
     this.makeTale = (request, conf = this.conf) => {
-      if (conf.taleBefore !== '') {
-        if (request.url.indexOf('?') === -1) {
-          request.url += '?' + conf.taleBefore
-        } else {
-          request.url += '&' + conf.taleBefore
-        }
-      }
       // Set nonce based on localized object / var
-      if (conf.taleNonce !== '') {
-        let query = conf.taleNonce.split('=')
+      if (conf.nonceTale !== '') {
+        let query = conf.nonceTale.split('=')
         if (query.length === 2) {
           let param = query[0]
           let hook = query[1]
@@ -388,13 +397,6 @@ export default class Requester {
           }
         }
       }
-      if (conf.taleAfter !== '') {
-        if (request.url.indexOf('?') === -1) {
-          request.url += '?' + conf.taleAfter
-        } else {
-          request.url += '&' + conf.taleAfter
-        }
-      }
       return request
     }
 
@@ -407,6 +409,43 @@ export default class Requester {
         cancel()
       })
       return request
+    }
+
+    this.verifyToken = (url, token = '') => {
+      window.open(url + '?' + (token !== '' ? util.querystring.stringify({ oauth_token: token }) : ''),
+        '_blank'
+      )
+    }
+
+    this.getTokenRequest = (url) => {
+      let scope = this
+      let conf = JSON.parse(JSON.stringify(this.getConf))
+      conf.addDataToQuery = false
+      conf.addAuthHeaders = true
+      return new Promise((resolve, reject) => {
+        scope.get(url, null, false, false, conf).then(res => {
+          resolve(res)
+        }).catch(e => {
+          reject(e)
+        })
+      })
+    }
+
+    this.getTokenAccess = (url, requestToken, requestTokenSecret, verifierToken) => {
+      url = url + '?oauth_verifier=' + verifierToken
+      let scope = this
+      let conf = JSON.parse(JSON.stringify(this.getConf))
+      conf.addDataToQuery = false
+      conf.addAuthHeaders = true
+      conf.key = requestToken
+      conf.secret = requestTokenSecret
+      return new Promise((resolve, reject) => {
+        scope.get(url, null, false, false, conf).then(res => {
+          resolve(res)
+        }).catch(e => {
+          reject(e)
+        })
+      })
     }
   }
 }

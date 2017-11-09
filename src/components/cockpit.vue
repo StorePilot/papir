@@ -131,7 +131,6 @@
             ],
             slug: 'wc',
             default: false,
-            requester: 'oauth',
             config: {
               authentication: 'oauth',
               version: '1.0a',
@@ -153,9 +152,9 @@
               addAuthHeaders: false,
               nonce: '',
               nonceLength: 6,
+              nonceTale: '', // _wpnonce=wcApiSettings.nonce
               timestampLength: 10,
               ampersand: true,
-              taleNonce: '', // _wpnonce=wcApiSettings.nonce
               headers: [],
               put: {
                 authQuery: true,
@@ -249,9 +248,6 @@
         let ep = this.genEndpoint(this.config)
         this.genRequest(this.shared.method, ep)
         this.save()
-      },
-      'api.config.authentication' (value) {
-        this.api.requester = value
       }
     },
     methods: {
@@ -315,14 +311,7 @@
         if (api.default || controller.default === null) {
           controller.default = api.slug
         }
-        if (
-          typeof api.requester !== 'undefined' &&
-          typeof controller.requesters[api.requester] !== 'undefined'
-        ) {
-          api.requester = new controller.requesters[api.requester](api.config)
-        } else {
-          api.requester = new this.$pap.Requester(api.config)
-        }
+        api.requester = new this.$pap.Requester(api.config)
         let endpoint = this.shared.endpoint === null ? '' : this.shared.endpoint.name
         return (this.shared.ep = new this.$pap.Endpoint(endpoint, controller, api.slug))
       },

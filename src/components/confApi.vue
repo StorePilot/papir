@@ -49,6 +49,7 @@
           <el-option label="No Security" value=""></el-option>
           <el-option label="Basic Authentication" value="basic"></el-option>
           <el-option label="OAuth" value="oauth"></el-option>
+          <el-option label="Nonce" value="nonce"></el-option>
         </el-select>
         <h5>Authentication Version</h5>
         <el-select v-model="api.config.version" placeholder="Select">
@@ -114,9 +115,9 @@
         </el-switch>
       </el-tab-pane>
       <el-tab-pane label="Auth Append">
-        <h5>Cookie Nonce Generation by Localized variable</h5>
+        <h5>Cookie Nonce Generation by Localized Variable</h5>
         <el-input
-            v-model="api.config.taleNonce">
+            v-model="api.config.nonceTale">
         </el-input>
         <h5>Authorize by querystring</h5>
         <el-switch
