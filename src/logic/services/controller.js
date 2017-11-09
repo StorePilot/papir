@@ -6,6 +6,7 @@ import Requester from './requester'
 export class Controller {
   constructor (options = {}) {
     options = Object.assign({
+      config: {},
       serverBase: null,
       apis: require('../apis.json')
     }, options)
@@ -21,7 +22,8 @@ export class Controller {
       if (this.server !== null && (typeof api.base === 'undefined' || api.base === '')) {
         api.base = this.server
       }
-      api.requester = new Requester(api.config)
+      let config = Object.assign(api.config, options.conf)
+      api.requester = new Requester(config)
       this.apis[api.slug] = api
     })
   }
