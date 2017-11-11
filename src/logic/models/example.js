@@ -5,11 +5,11 @@ import Prop from '../form/prop'
  * Example model
  */
 export default class Example extends Endpoint {
-  constructor (controller, id = null, api = controller.default) {
+  constructor (controller, id = null, apiSlug = controller.default, predefined = {}) {
     /**
      * Pass to Endpoint model
      */
-    super('example', controller, api)
+    super('example', controller, apiSlug, predefined)
 
     /**
      * Define properties
