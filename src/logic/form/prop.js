@@ -58,8 +58,12 @@ export default class Prop {
       if (changed !== null && !changed) {
         try {
           value = JSON.parse(JSON.stringify(accessor.value))
-        } catch (error) {
-          console.error(error)
+        } catch (e) {
+          try {
+            value = accessor.value.clone()
+          } catch (e) {
+            value = accessor.value
+          }
         }
       } else if (changed !== null && changed) {
         value = accessor.value !== null ? null : 0
