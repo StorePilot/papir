@@ -2,7 +2,7 @@
  * Query
  */
 export default class Query {
-  constructor(endpoint) {
+  constructor (endpoint) {
     let accessor = this
     let queries = []
     let argsMap = {}

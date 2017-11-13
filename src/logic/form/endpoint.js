@@ -529,7 +529,7 @@ export default class Endpoint {
       }
       // Resolve Creation Identifier
       let resolveCreationIdentifier = (endpoint) => {
-        let match = undefined
+        let match
         accessor.children.forEach(child => {
           if (
             child.shared.map !== null &&
