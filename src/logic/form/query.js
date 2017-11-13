@@ -2,7 +2,7 @@
  * Query
  */
 export default class Query {
-  constructor (endpoint) {
+  constructor(endpoint) {
     let accessor = this
     let queries = []
     let argsMap = {}
@@ -27,166 +27,137 @@ export default class Query {
         value: value
       })
       queries = newQ
+      return accessor
     }
 
     accessor.exclude = (value) => {
-      accessor.custom('exclude', value)
-      return accessor
+      return accessor.custom('exclude', value)
     }
 
     accessor.include = (value) => {
-      accessor.custom('include', value)
-      return accessor
+      return accessor.custom('include', value)
     }
 
     accessor.parent = (value) => {
-      accessor.custom('parent', value)
-      return accessor
+      return accessor.custom('parent', value)
     }
 
     accessor.parentExclude = (value) => {
-      accessor.custom('parent_exclude', value)
-      return accessor
+      return accessor.custom('parent_exclude', value)
     }
 
     accessor.slug = (value) => {
-      accessor.custom('slug', value)
-      return accessor
+      return accessor.custom('slug', value)
     }
 
     accessor.status = (value) => {
-      accessor.custom('status', value)
-      return accessor
+      return accessor.custom('status', value)
     }
 
     accessor.type = (value) => {
-      accessor.custom('type', value)
-      return accessor
+      return accessor.custom('type', value)
     }
 
     accessor.sku = (value) => {
-      accessor.custom('sku', value)
-      return accessor
+      return accessor.custom('sku', value)
     }
 
     accessor.featured = (value) => {
-      accessor.custom('featured', value)
-      return accessor
+      return accessor.custom('featured', value)
     }
 
     accessor.shippingClass = (value) => {
-      accessor.custom('shipping_class', value)
-      return accessor
+      return accessor.custom('shipping_class', value)
     }
 
     accessor.attribute = (value) => {
-      accessor.custom('attribute', value)
-      return accessor
+      return accessor.custom('attribute', value)
     }
 
     accessor.attributeTerm = (value) => {
-      accessor.custom('attribute_term', value)
-      return accessor
+      return accessor.custom('attribute_term', value)
     }
 
     accessor.taxClass = (value) => {
-      accessor.custom('tax_class', value)
-      return accessor
+      return accessor.custom('tax_class', value)
     }
 
     accessor.inStock = (value = true) => {
-      accessor.custom('in_stock', value)
-      return accessor
+      return accessor.custom('in_stock', value)
     }
 
     accessor.onSale = (value = true) => {
-      accessor.custom('on_sale', value)
-      return accessor
+      return accessor.custom('on_sale', value)
     }
 
     accessor.product = (value) => {
-      accessor.custom('product', value)
-      return accessor
+      return accessor.custom('product', value)
     }
 
     accessor.minPrice = (value = 0) => {
-      accessor.custom('min_price', value)
-      return accessor
+      return accessor.custom('min_price', value)
     }
 
     accessor.maxPrice = (value = 10000) => {
-      accessor.custom('max_price', value)
-      return accessor
+      return accessor.custom('max_price', value)
     }
 
     accessor.after = (value) => {
-      accessor.custom('after', value)
-      return accessor
+      return accessor.custom('after', value)
     }
 
     accessor.before = (value) => {
-      accessor.custom('before', value)
-      return accessor
+      return accessor.custom('before', value)
     }
 
     accessor.hideEmpty = (value = true) => {
-      accessor.custom('hide_empty', value)
-      return accessor
+      return accessor.custom('hide_empty', value)
     }
 
     accessor.order = (value = 'desc') => {
-      accessor.custom('order', value)
-      return accessor
+      return accessor.custom('order', value)
     }
 
     accessor.orderby = (value = 'menu_order') => {
-      accessor.custom('orderby', value)
-      return accessor
+      return accessor.custom('orderby', value)
     }
 
     accessor.offset = (value = 100) => {
-      accessor.custom('offset', value)
-      return accessor
+      return accessor.custom('offset', value)
     }
 
     accessor.search = (value = '') => {
-      accessor.custom('search', value)
-      return accessor
+      return accessor.custom('search', value)
     }
 
     accessor.page = (value = 1) => {
-      accessor.custom('page', value)
-      return accessor
+      return accessor.custom('page', value)
     }
 
     accessor.perPage = (value = 12) => {
-      accessor.custom('per_page', value)
-      return accessor
+      return accessor.custom('per_page', value)
     }
 
     accessor.category = (value = 0) => {
-      accessor.custom('category', value)
-      return accessor
+      return accessor.custom('category', value)
     }
 
     accessor.context = (value = 'view') => {
-      accessor.custom('context', value)
-      return accessor
+      return accessor.custom('context', value)
     }
 
     accessor.tag = (value = 0) => {
-      accessor.custom('tag', value)
-      return accessor
+      return accessor.custom('tag', value)
     }
 
     accessor.fetch = (apiSlug = endpoint.shared.defaultApi, args = null, replace = true) => {
       // Merge args with queries as its just two different ways of using args
       if (args !== null) {
         args.forEach(arg => {
-          accessor.custom(arg.key, arg.value)
+          return accessor.custom(arg.key, arg.value)
         })
       }
-      return endpoint.fetch(apiSlug, accessor.queries, replace)
+      return endpoint.fetch(apiSlug, queries, replace)
     }
   }
 }

@@ -228,14 +228,17 @@ export default class Endpoint {
           key = typeof map.props[key] !== 'undefined' ? map.props[key] : key
         }
         // Replace hook with value from mapped prop
-        if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined' && (batch || key !== config.batchIdentifier)) {
+        if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined' && accessor[key].value !== null && (batch || key !== config.batchIdentifier)) {
           path = path.replace(hook, (slash ? '/' : '') + accessor[key].value)
-        } else if (accessor.reserved(key) && typeof accessor.invalids[key] !== 'undefined' && (batch || key !== config.batchIdentifier)) {
+        } else if (accessor.reserved(key) && typeof accessor.invalids[key] !== 'undefined' && accessor[key].value !== null && (batch || key !== config.batchIdentifier)) {
           path = path.replace(hook, (slash ? '/' : '') + accessor.invalids[key].value)
         } else {
           path = path.replace(hook, '')
         }
       })
+      while (path.indexOf('//') !== -1) {
+        path = path.replace('//', '/')
+      }
       let url = base + path
       if (map !== null && typeof map !== 'undefined' && typeof map.params !== 'undefined' && map.params.constructor === Array) {
         if (args !== null) {
@@ -790,9 +793,9 @@ export default class Endpoint {
       let exchange
       if (endpoint.identifier !== null) {
         exchange = accessor.children.find(child => {
-          return child.identifier !== null && child.identifier.value === endpoint.identifier.value
+          return (typeof child.identifier !== 'undefined' && typeof endpoint.identifier !== 'undefined' && child.identifier !== null && child.identifier.value === endpoint.identifier.value)
         })
-        if (typeof exchange === 'undefined') {
+        if (typeof exchange === 'undefined' || exchange === false) {
           exchange = smartFind(endpoint)
         }
       } else {
@@ -926,43 +929,53 @@ export default class Endpoint {
         return new Promise((resolve, reject) => {
           let loadSlug = 'save'
           startLoader(loadSlug)
-          accessor.shared.makeRequest(
-            loadSlug,
-            'PUT',
-            apiSlug,
-            args,
-            accessor.removeIdentifiers(
-              accessor.reverseMapping(
-                accessor.changes()
-              )
-            ),
-            false,
-            {
-              perform: perform
-            }
-          ).then(response => {
-            accessor.shared.handleSuccess(response, replace).then(response => {
+          if (typeof accessor.identifier !== 'undefined' && accessor.identifier.value === null) {
+            accessor.create(apiSlug, args, replace, true, perform).then(response => {
               stopLoader(loadSlug)
               resolve(accessor)
             }).catch(error => {
               stopLoader(loadSlug)
               reject(error)
             })
-          }).catch(error => {
-            // If could not save, try create
-            if (create) {
-              accessor.create(apiSlug, args, replace, true, perform).then(response => {
+          } else {
+            accessor.shared.makeRequest(
+              loadSlug,
+              'PUT',
+              apiSlug,
+              args,
+              accessor.removeIdentifiers(
+                accessor.reverseMapping(
+                  accessor.changes()
+                )
+              ),
+              false,
+              {
+                perform: perform
+              }
+            ).then(response => {
+              accessor.shared.handleSuccess(response, replace).then(response => {
                 stopLoader(loadSlug)
                 resolve(accessor)
               }).catch(error => {
                 stopLoader(loadSlug)
                 reject(error)
               })
-            } else {
-              stopLoader(loadSlug)
-              reject(error)
-            }
-          })
+            }).catch(error => {
+              // If could not save, try create
+              if (create) {
+                accessor.create(apiSlug, args, replace, true, perform).then(response => {
+                  stopLoader(loadSlug)
+                  resolve(accessor)
+                }).catch(error => {
+                  stopLoader(loadSlug)
+                  reject(error)
+                })
+              } else {
+                stopLoader(loadSlug)
+                reject(error)
+              }
+            })
+          }
         }).catch(error => {
           console.error(error)
         })
@@ -984,6 +997,17 @@ export default class Endpoint {
         return accessor.batch({ save: save }, apiSlug, args, replace, perform, map)
       } else {
         return new Promise((resolve, reject) => {
+          let withEmpty = accessor.removeIdentifiers(accessor.reverseMapping())
+          let data = {}
+          if (!config.post.keepNull) {
+            Object.keys(withEmpty).forEach(key => {
+              if (withEmpty[key] !== null) {
+                data[key] = withEmpty[key]
+              }
+            })
+          } else {
+            data = withEmpty
+          }
           let loadSlug = 'create'
           startLoader(loadSlug)
           accessor.shared.makeRequest(
@@ -991,9 +1015,7 @@ export default class Endpoint {
             'POST',
             apiSlug,
             args,
-            accessor.removeIdentifiers(
-              accessor.reverseMapping()
-            ),
+            data,
             false,
             {
               perform: perform
