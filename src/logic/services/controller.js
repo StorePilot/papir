@@ -26,6 +26,20 @@ export class Controller {
         api.config = {}
       }
       let config = Object.assign(api.config, options.conf)
+      if (typeof config.key !== 'undefined') {
+        localStorage.setItem('papir.' + api.slug + '.key', config.key)
+      }
+      if (typeof config.secret !== 'undefined') {
+        localStorage.setItem('papir.' + api.slug + '.secret', config.secret)
+      }
+      if (typeof config.token !== 'undefined' && config.token.constructor === Object) {
+        localStorage.setItem('papir.' + api.slug + '.token', JSON.stringify(config.token))
+      }
+      config = Object.assign(config, {
+        key: (localStorage.getItem('papir.' + api.slug + '.key') !== null ? localStorage.getItem('papir.' + api.slug + '.key') : ''),
+        secret: (localStorage.getItem('papir.' + api.slug + '.secret') !== null ? localStorage.getItem('papir.' + api.slug + '.secret') : ''),
+        token: (localStorage.getItem('papir.' + api.slug + '.token') !== null ? JSON.parse(localStorage.getItem('papir.' + api.slug + '.token')) : { key: '', secret: '' })
+      })
       api.requester = new Requester(config)
       this.apis[api.slug] = api
     })

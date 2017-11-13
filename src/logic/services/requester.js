@@ -7,7 +7,15 @@ import sign from './sign'
  */
 export default class Requester {
   constructor (customConf = {}) {
-    this.requester = 'default'
+    if (typeof customConf.key !== 'undefined') {
+      localStorage.setItem('papir.key', customConf.key)
+    }
+    if (typeof customConf.secret !== 'undefined') {
+      localStorage.setItem('papir.secret', customConf.secret)
+    }
+    if (typeof customConf.token !== 'undefined' && customConf.token.constructor === Object) {
+      localStorage.setItem('papir.token', JSON.stringify(customConf.token))
+    }
     this.conf = {
       responseType: 'json', // ['arraybuffer', 'blob', 'document', 'json', 'text', 'stream']
       headers: {},
@@ -36,9 +44,9 @@ export default class Requester {
       version: '1.0a',
       type: 'one_legged',
       algorithm: 'HMAC-SHA1',
-      key: '',
-      secret: '',
-      token: { key: '', secret: '' },
+      key: (localStorage.getItem('papir.key') !== null ? localStorage.getItem('papir.key') : ''),
+      secret: (localStorage.getItem('papir.secret') !== null ? localStorage.getItem('papir.secret') : ''),
+      token: (localStorage.getItem('papir.token') !== null ? JSON.parse(localStorage.getItem('papir.token')) : { key: '', secret: '' }),
       nonce: '',
       nonceLength: 6,
       nonceTale: '',
