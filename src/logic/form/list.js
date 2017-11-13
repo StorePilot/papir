@@ -17,5 +17,6 @@ export default class List extends Endpoint {
         multiple: true
       }
     )
+    this.shared.map.child = endpoint.shared.endpoint
   }
 }

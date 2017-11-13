@@ -164,6 +164,14 @@
                   method: 'OPTIONS'
                 }
               },
+              delete: {
+                authQuery: true,
+                authHeader: true,
+                override: {
+                  arg: '_method',
+                  method: 'OPTIONS'
+                }
+              },
               perform: false
             },
             data: '',
@@ -491,6 +499,7 @@
             })
           }
           endpoint.name = key
+          clone.mappings.push(endpoint)
         })
         let headers = JSON.parse(JSON.stringify(clone.config.headers))
         clone.config.headers = []
