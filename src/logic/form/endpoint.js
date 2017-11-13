@@ -1573,36 +1573,37 @@ export default class Endpoint {
      * Get all changed props including invalids as object without reserved methods / variables
      * reference === true returns reference. Else only value is returned
      */
-    accessor.changes = (reference = false) => {
+    accessor.changes = (reference = false, arr = false) => {
       let obj = {}
+      let array = []
       if (reference) {
         Object.keys(accessor).forEach(key => {
           if (!accessor.reserved(key)) {
             if (accessor[key].changed()) {
-              obj[key] = accessor[key]
+              arr ? array.push(accessor[key]) : obj[key] = accessor[key]
             }
           }
         })
         Object.keys(accessor.invalids).forEach(key => {
           if (accessor[key].changed()) {
-            obj[key] = accessor[key]
+            arr ? array.push(accessor[key]) : obj[key] = accessor[key]
           }
         })
       } else {
         Object.keys(accessor).forEach(key => {
           if (!accessor.reserved(key)) {
             if (accessor[key].changed()) {
-              obj[key] = accessor[key].value
+              arr ? array.push(key, accessor[key].value) : obj[key] = accessor[key].value
             }
           }
         })
         Object.keys(accessor.invalids).forEach(key => {
           if (accessor[key].changed()) {
-            obj[key] = accessor[key].value
+            arr ? array.push([key, accessor[key].value]) : obj[key] = accessor[key].value
           }
         })
       }
-      return obj
+      return arr ? array: obj
     }
 
     /**
