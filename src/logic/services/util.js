@@ -154,7 +154,7 @@ class Util {
             error = true
             // Unknown
           }
-          if (!error && value.constructor !== Array && value.constructor !== Object) {
+          if (!error && (value === null || (value.constructor !== Array && value.constructor !== Object))) {
             if (name !== null && name !== '' && value !== '') {
               if (options.encodeValues && (value !== null || options.keepNull)) {
                 value = encode.encode(value, options.protocol, options.encodeNull)
