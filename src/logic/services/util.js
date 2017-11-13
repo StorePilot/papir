@@ -69,6 +69,7 @@ class Util {
           encodeNull: true,
           dateFormat: '', // Default ISO 8601
           keepEmpty: true,
+          keepNull: true,
           delimiter: '&',
           splitter: '=',
           dotNotation: false,
@@ -155,7 +156,7 @@ class Util {
           }
           if (!error && value.constructor !== Array && value.constructor !== Object) {
             if (name !== null && name !== '' && value !== '') {
-              if (options.encodeValues) {
+              if (options.encodeValues && (value !== null || options.keepNull)) {
                 value = encode.encode(value, options.protocol, options.encodeNull)
               }
               querystring += name + options.splitter + value + options.delimiter

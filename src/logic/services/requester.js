@@ -15,9 +15,23 @@ export default class Requester {
         arg: '_method', // The query argument to be given actual method
         method: null // The replacement method. (will be fired instead of actual method. Ex.: 'OPTIONS')
       },
+      name: null, // Root key where data is attached in data
       addDataToQuery: true,
+      keepEmpty: true,
+      keepNull: true,
+      protocol: 'rfc3986',
+      delimiter: '&',
+      splitter: '=',
+      divider: '?',
+      encodeNames: true,
+      encodeValues: true,
+      encodeNull: true,
+      excludes: [],
+      includes: [],
+      dotNotation: false,
       authQuery: true,
       authHeader: false,
+      dateFormat: '',
       authentication: 'oauth',
       version: '1.0a',
       type: 'one_legged',
@@ -37,7 +51,9 @@ export default class Requester {
       sort: true,
       // Conf specific per method type. (Same Options as above)
       get: {},
-      post: {},
+      post: {
+        keepNull: false
+      },
       put: {},
       patch: {},
       delete: {},
@@ -210,34 +226,35 @@ export default class Requester {
       // 4.2 Encode arguments after first divider until second divider.
       // Ex.: ignored?encoded?ignored?ignored
       request.url = util.querystring.encode(request.url, {
-        protocol: 'rfc3986',
-        divider: '?',
-        delimiter: '&',
-        splitter: '=',
-        encodeNull: true,
-        keepEmpty: true,
-        encodeNames: true,
-        encodeValues: true
+        protocol: conf.protocol,
+        divider: conf.divider,
+        delimiter: conf.delimiter,
+        splitter: conf.splitter,
+        encodeNull: conf.encodeNull,
+        keepEmpty: conf.keepEmpty,
+        encodeNames: conf.encodeNames,
+        encodeValues: conf.encodeValues
       })
 
       // 5.1 Append data to querystring arguments if required
 
       if (conf.addDataToQuery && !upload) {
         request.url = this.makeDataQuery(request.url, data, {
-          name: null,
-          protocol: 'rfc3986',
-          encodeNull: true,
-          dateFormat: '', // Default ISO 8601
-          keepEmpty: true,
-          delimiter: '&',
-          splitter: '=',
-          dotNotation: false,
-          encodeNames: true,
-          encodeValues: true,
-          indexArrays: true,
-          excludes: [], // At first level
-          includes: [] // At first level. includes overrides excludes
-        })
+          name: conf.name, // Root key where data is attached
+          protocol: conf.protocol,
+          encodeNull: conf.encodeNull,
+          dateFormat: conf.dateFormat, // Default ISO 8601
+          keepEmpty: conf.keepEmpty,
+          keepNull: conf.keepNull,
+          delimiter: conf.delimiter,
+          splitter: conf.splitter,
+          dotNotation: conf.dotNotation,
+          encodeNames: conf.encodeNames,
+          encodeValues: conf.encodeValues,
+          indexArrays: conf.indexArrays,
+          excludes: conf.excludes, // At first level
+          includes: conf.includes // At first level. includes overrides excludes
+        }, conf)
         data = null
       }
 
@@ -251,7 +268,7 @@ export default class Requester {
       let querystring = ''
       let sortable = []
       util.getParams(request.url).forEach(param => {
-        sortable.push(param.key + '=' + param.value + '&')
+        sortable.push(param.key + conf.splitter + param.value + conf.delimiter)
       })
       sortable.sort()
       sortable.forEach(param => {
@@ -259,7 +276,7 @@ export default class Requester {
       })
       if (querystring !== '') {
         querystring = querystring.slice(0, -1)
-        request.url = util.stripUri(request.url) + '?' + querystring
+        request.url = util.stripUri(request.url) + conf.divider + querystring
       } else {
         request.url = util.stripUri(request.url)
       }
@@ -278,8 +295,8 @@ export default class Requester {
 
       if (conf.override.method !== null && method !== conf.override.method) {
         request.method = conf.override.method
-        request.url += request.url.indexOf('?') === -1 ? '?' : '&'
-        request.url += conf.override.arg + '=' + method
+        request.url += request.url.indexOf(conf.divider) === -1 ? conf.divider : conf.delimiter
+        request.url += conf.override.arg + conf.splitter + method
       }
 
       // 10. Append headers
@@ -325,7 +342,7 @@ export default class Requester {
         // 2. If authentication should be applied to querystring
 
         if (conf.authQuery) {
-          request.url = util.stripUri(request.url) + '?' + sign.gen(conf).string
+          request.url = util.stripUri(request.url) + conf.divider + sign.gen(conf).string
         }
 
         // 3. If authentication should be applied to header
@@ -363,13 +380,13 @@ export default class Requester {
       })
     }
 
-    this.makeDataQuery = (url, data, options) => {
+    this.makeDataQuery = (url, data, options, conf = this.conf) => {
       if (data !== null) {
         let queryString = util.querystring.stringify(data, options)
-        if (url.indexOf('?') === -1 && queryString !== '') {
-          url += '?' + queryString
+        if (url.indexOf(conf.divider) === -1 && queryString !== '') {
+          url += conf.divider + queryString
         } else if (queryString !== '') {
-          url += '&' + queryString
+          url += conf.delimiter + queryString
         }
       }
       return url
@@ -378,7 +395,7 @@ export default class Requester {
     this.makeTale = (request, conf = this.conf) => {
       // Set nonce based on localized object / var
       if (conf.nonceTale !== '') {
-        let query = conf.nonceTale.split('=')
+        let query = conf.nonceTale.split(conf.splitter)
         if (query.length === 2) {
           let param = query[0]
           let hook = query[1]
@@ -388,10 +405,10 @@ export default class Requester {
               /* eslint-disable */
               let nonce = String(eval(hook))
               /* eslint-enable */
-              if (request.url.indexOf('?') === -1) {
-                request.url += '?' + param + '=' + nonce
+              if (request.url.indexOf(conf.divider) === -1) {
+                request.url += conf.divider + param + conf.splitter + nonce
               } else {
-                request.url += '&' + param + '=' + nonce
+                request.url += conf.delimiter + param + conf.splitter + nonce
               }
             } catch (e) {}
           }
@@ -411,8 +428,8 @@ export default class Requester {
       return request
     }
 
-    this.verifyToken = (url, token = '') => {
-      window.open(url + '?' + (token !== '' ? util.querystring.stringify({ oauth_token: token }) : ''),
+    this.verifyToken = (url, token = '', conf = this.conf) => {
+      window.open(url + conf.divider + (token !== '' ? util.querystring.stringify({ oauth_token: token }) : ''),
         '_blank'
       )
     }
