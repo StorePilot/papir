@@ -8,7 +8,11 @@ import axios from 'axios'
 export default class Endpoint {
   constructor (endpoint, controller, apiSlug = null, predefined = {}, config = {}) {
     config = Object.assign({
-      multiple: false
+      multiple: false,
+      batchIdentifier: 'batch',
+      post: {
+        keepNull: false
+      }
     }, config)
     /**
      * Public Scope
@@ -165,14 +169,12 @@ export default class Endpoint {
         Object.keys(predefined).forEach(key => {
           if (!accessor.reserved(key) && typeof accessor[key] === 'undefined') {
             accessor[key] = new Prop(accessor, key, predefined[key])
-          } else if (key === 'invalids' && typeof accessor.invalids[key] === 'undefined') {
+          } else if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined') {
+            accessor[key].value = predefined[key]
+          } else if (accessor.reserved(key) && typeof accessor.invalids[key] === 'undefined') {
             accessor.invalids[key] = new Prop(accessor, key, predefined[key])
-          } else if (typeof accessor[key] !== 'undefined') {
-            if (key === 'invalids') {
-              accessor.invalids[key].value = predefined[key]
-            } else {
-              accessor[key].value = predefined[key]
-            }
+          } else {
+            accessor.invalids[key].value = predefined[key]
           }
         })
       } catch (error) {
@@ -226,9 +228,9 @@ export default class Endpoint {
           key = typeof map.props[key] !== 'undefined' ? map.props[key] : key
         }
         // Replace hook with value from mapped prop
-        if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined') {
+        if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined' && (batch || key !== config.batchIdentifier)) {
           path = path.replace(hook, (slash ? '/' : '') + accessor[key].value)
-        } else if (accessor.reserved(key) && typeof accessor.invalids[key] !== 'undefined') {
+        } else if (accessor.reserved(key) && typeof accessor.invalids[key] !== 'undefined' && (batch || key !== config.batchIdentifier)) {
           path = path.replace(hook, (slash ? '/' : '') + accessor.invalids[key].value)
         } else {
           path = path.replace(hook, '')
@@ -524,64 +526,46 @@ export default class Endpoint {
       }
       // Resolve Creation Identifier
       let resolveCreationIdentifier = (endpoint) => {
-        if (map !== null && typeof map !== 'undefined' && typeof map.creationIdentifier !== 'undefined') {
-          let identifier = map.creationIdentifier
-          let split = identifier.replace('=', '|=split=|').split('|=split=|')
-          let prop = null
-          // Resolve mapping
-          if (typeof map.props !== 'undefined' && typeof map.props[split[0]] !== 'undefined') {
-            split[0] = map.props[split[0]]
-          }
-          // Check if property exist and make reference to prop
-          if (!endpoint.reserved(split[0]) && typeof endpoint[split[0]] !== 'undefined') {
-            prop = endpoint[split[0]]
-          } else if (endpoint.reserved(split[0]) && typeof endpoint.invalids[split[0]] !== 'undefined') {
-            prop = endpoint.invalids[split[0]]
-          }
-          // If Creation Identifier is set, try to resolve
-          if (prop !== null) {
-            return accessor.children.find(child => {
-              let match = false
-              let childProp = null
-              // Check if property exist and make reference to prop in child
-              if (!child.reserved(split[0]) && typeof child[split[0]] !== 'undefined') {
-                childProp = child[split[0]]
-              } else if (child.reserved(split[0]) && typeof child.invalids[split[0]] !== 'undefined') {
-                childProp = child.invalids[split[0]]
-              }
-              if (childProp === null) {
-                match = false
-              } else {
-                if (JSON.stringify(childProp.value) === JSON.stringify(prop.value)) {
-                  match = true
+        let match = undefined
+        accessor.children.forEach(child => {
+          if (
+            child.shared.map !== null &&
+            typeof child.shared.map !== 'undefined' &&
+            typeof child.shared.map.creationIdentifier !== 'undefined' &&
+            typeof child.shared.creationIdentifier !== 'undefined'
+          ) {
+            let identifier = child.shared.map.creationIdentifier
+            let prop = identifier.split('=')[0]
+            if (!endpoint.reserved(prop)) {
+              if (
+                typeof endpoint[prop] !== 'undefined' &&
+                typeof endpoint[prop].value !== 'undefined' &&
+                JSON.stringify(endpoint[prop].value).indexOf(child.shared.creationIdentifier) !== -1
+              ) {
+                if (!endpoint.reserved(child.identifier.key)) {
+                  child.identifier.value = endpoint[child.identifier.key].value
                 } else {
-                  if (childProp.value.constructor === Array && prop.value.constructor === Array) {
-                    prop.value.forEach(obj1 => {
-                      childProp.value.forEach(obj2 => {
-                        if (JSON.stringify(obj1) === JSON.stringify(obj2)) {
-                          match = true
-                        }
-                      })
-                    })
-                  } else {
-                    Object.keys(prop.value).forEach(key1 => {
-                      Object.keys(childProp.value).forEach(key2 => {
-                        if (JSON.stringify(prop.value[key1]) === JSON.stringify(childProp.value[key2])) {
-                          match = true
-                        }
-                      })
-                    })
-                  }
+                  child.identifier.value = endpoint.invalids[child.identifier.key].value
                 }
+                match = child
               }
-              return match
-            })
-          } else {
-            return undefined
+            } else {
+              if (
+                typeof endpoint.invalids[prop] !== 'undefined' &&
+                typeof endpoint.invalids[prop].value !== 'undefined' &&
+                JSON.stringify(endpoint.invalids[prop].value).indexOf(child.shared.creationIdentifier) !== -1
+              ) {
+                if (!endpoint.reserved(child.identifier.key)) {
+                  child.identifier.value = endpoint[child.identifier.key].value
+                } else {
+                  child.identifier.value = endpoint.invalids[child.identifier.key].value
+                }
+                match = child
+              }
+            }
           }
-        } else {
-          return undefined
-        }
+        })
+        return match
       }
       // Find exact match by all props (Reliable)
       let findExactMatch = (endpoint) => {
@@ -1151,31 +1135,32 @@ export default class Endpoint {
         accessor.children.forEach(child => {
           // Create Creation Identifier
           if (child.identifier === null || child.identifier.value === null) {
-            if (map !== null && typeof map !== 'undefined' && typeof map.creationIdentifier !== 'undefined') {
-              let identifier = map.creationIdentifier
-              let split = identifier.replace('=', '|=split=|').split('|=split=|')
-              let prop = split[0]
+            if (child.shared.map !== null && typeof child.shared.map !== 'undefined' && typeof child.shared.map.creationIdentifier !== 'undefined') {
+              let identifier = child.shared.map.creationIdentifier
+              let prop = identifier.split('=')[0]
+              let val = identifier.substring((prop.length + 1))
               // Resolve mapping
-              if (typeof map.props !== 'undefined' && typeof map.props[prop] !== 'undefined') {
-                prop = map.props[prop]
+              if (typeof child.shared.map.props !== 'undefined' && typeof child.shared.map.props[prop] !== 'undefined') {
+                prop = child.shared.map.props[prop]
               }
               // Check if property exist and make reference to prop
-              if (!accessor.reserved(prop) && typeof accessor[prop] !== 'undefined') {
-                prop = accessor[prop]
-              } else if (accessor.reserved(prop) && typeof accessor.invalids[prop] !== 'undefined') {
-                prop = accessor.invalids[prop]
+              if (!child.reserved(prop) && typeof child[prop] !== 'undefined') {
+                prop = child[prop]
+              } else if (child.reserved(prop) && typeof child.invalids[prop] !== 'undefined') {
+                prop = child.invalids[prop]
               } else {
                 // Create prop if not exist
-                if (!accessor.reserved(prop)) {
-                  prop = accessor[prop] = new Prop(accessor, prop)
+                if (!child.reserved(prop)) {
+                  prop = child[prop] = new Prop(child, prop)
                 } else {
-                  prop = accessor.invalids[prop] = new Prop(accessor, prop)
+                  prop = child.invalids[prop] = new Prop(child, prop)
                 }
               }
               // Generate creation identifier
               let id = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 15)
-              if (split.length === 2) {
-                let val = JSON.parse(split[1].replace('identifier', id))
+              child.shared.creationIdentifier = id
+              if (val.length > 0) {
+                val = JSON.parse(val.replace('identifier', id))
                 if (prop.value === null) {
                   prop.value = val
                 } else {
@@ -1189,7 +1174,18 @@ export default class Endpoint {
                 prop.value = id
               }
             }
-            data[hook].push(accessor.reverseMapping(child.props()))
+            let withEmpty = child.removeIdentifiers(child.reverseMapping(child.props()))
+            let results = {}
+            if (!config.post.keepNull) {
+              Object.keys(withEmpty).forEach(key => {
+                if (withEmpty[key] !== null) {
+                  results[key] = withEmpty[key]
+                }
+              })
+            } else {
+              results = withEmpty
+            }
+            data[hook].push(results)
           }
         })
       }
@@ -1585,8 +1581,8 @@ export default class Endpoint {
           }
         })
         Object.keys(accessor.invalids).forEach(key => {
-          if (accessor[key].changed()) {
-            arr ? array.push(accessor[key]) : obj[key] = accessor[key]
+          if (accessor.invalids[key].changed()) {
+            arr ? array.push(accessor.invalids[key]) : obj[key] = accessor.invalids[key]
           }
         })
       } else {
@@ -1598,12 +1594,12 @@ export default class Endpoint {
           }
         })
         Object.keys(accessor.invalids).forEach(key => {
-          if (accessor[key].changed()) {
-            arr ? array.push([key, accessor[key].value]) : obj[key] = accessor[key].value
+          if (accessor.invalids[key].changed()) {
+            arr ? array.push([key, accessor.invalids[key].value]) : obj[key] = accessor.invalids[key].value
           }
         })
       }
-      return arr ? array: obj
+      return arr ? array : obj
     }
 
     /**
