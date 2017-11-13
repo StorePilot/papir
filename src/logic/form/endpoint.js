@@ -6,7 +6,10 @@ import axios from 'axios'
  * Endpoint
  */
 export default class Endpoint {
-  constructor (endpoint, controller, apiSlug = null, predefined = {}) {
+  constructor (endpoint, controller, apiSlug = null, predefined = {}, config = {}) {
+    config = Object.assign({
+      multiple: false
+    }, config)
     /**
      * Public Scope
      */
@@ -405,7 +408,7 @@ export default class Endpoint {
      * Handle Request Success Response
      */
     accessor.shared.handleSuccess = (response, replace = true, key = null, batch = false, map = accessor.shared.map) => {
-      let multiple = (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple)
+      let multiple = ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || config.multiple)
       return new Promise((resolve, reject) => {
         if (replace) {
           accessor.shared.handleMapping(response, key, batch, multiple).then(results => {
@@ -822,6 +825,7 @@ export default class Endpoint {
       promise = new Promise(resolve => resolve()),
       batch = false
     ) => {
+      conf = Object.assign(config, conf)
       if (canceler !== false) {
         let cancelHandler = accessor.shared.handleCancellation(cancelers[canceler])
         cancelers[canceler] = cancelHandler.cancellation
@@ -907,7 +911,7 @@ export default class Endpoint {
       perform = true,
       map = accessor.shared.map
     ) => {
-      if (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) {
+      if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || config.multiple) {
         return accessor.batch({ create: create }, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
@@ -967,7 +971,7 @@ export default class Endpoint {
       perform = true,
       map = accessor.shared.map
     ) => {
-      if (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) {
+      if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || config.multiple) {
         return accessor.batch({ save: save }, apiSlug, args, replace, perform, map)
       } else {
         return new Promise((resolve, reject) => {
@@ -1013,7 +1017,7 @@ export default class Endpoint {
       perform = true,
       map = accessor.shared.map
     ) => {
-      if (map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) {
+      if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || config.multiple) {
         return accessor.batch({ save: false, create: false, delete: true }, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
