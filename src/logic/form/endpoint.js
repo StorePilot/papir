@@ -850,12 +850,6 @@ export default class Endpoint {
           // stopLoader(method)
           reject(accessor.shared.handleError(error))
         })
-      }).catch(error => {
-        if (error.response && error.response.status === 410 && method.toLowerCase() === 'delete') {
-          // Already deleted (Gone)
-        } else {
-          console.error(error)
-        }
       })
     }
 
@@ -903,8 +897,6 @@ export default class Endpoint {
           stopLoader(loadSlug)
           reject(error)
         })
-      }).catch(error => {
-        console.error(error)
       })
     }
 
@@ -976,8 +968,6 @@ export default class Endpoint {
               }
             })
           }
-        }).catch(error => {
-          console.error(error)
         })
       }
     }
@@ -1032,8 +1022,6 @@ export default class Endpoint {
             stopLoader(loadSlug)
             reject(error)
           })
-        }).catch(error => {
-          console.error(error)
         })
       }
     }
@@ -1085,8 +1073,6 @@ export default class Endpoint {
               reject(error)
             }
           })
-        }).catch(error => {
-          console.error(error)
         })
       }
     }
@@ -1127,8 +1113,6 @@ export default class Endpoint {
           stopLoader(loadSlug)
           reject(error)
         })
-      }).catch(error => {
-        console.error(error)
       })
     }
 
@@ -1279,8 +1263,6 @@ export default class Endpoint {
           stopLoader(loadSlug)
           reject(error)
         })
-      }).catch(error => {
-        console.error(error)
       })
     }
 

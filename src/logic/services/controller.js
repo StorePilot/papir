@@ -25,22 +25,7 @@ export class Controller {
       if (typeof api.config === 'undefined') {
         api.config = {}
       }
-      let config = Object.assign(api.config, options.conf)
-      if (typeof config.key !== 'undefined') {
-        localStorage.setItem('papir.' + api.slug + '.key', config.key)
-      }
-      if (typeof config.secret !== 'undefined') {
-        localStorage.setItem('papir.' + api.slug + '.secret', config.secret)
-      }
-      if (typeof config.token !== 'undefined' && config.token.constructor === Object) {
-        localStorage.setItem('papir.' + api.slug + '.token', JSON.stringify(config.token))
-      }
-      config = Object.assign(config, {
-        key: (localStorage.getItem('papir.' + api.slug + '.key') !== null ? localStorage.getItem('papir.' + api.slug + '.key') : ''),
-        secret: (localStorage.getItem('papir.' + api.slug + '.secret') !== null ? localStorage.getItem('papir.' + api.slug + '.secret') : ''),
-        token: (localStorage.getItem('papir.' + api.slug + '.token') !== null ? JSON.parse(localStorage.getItem('papir.' + api.slug + '.token')) : { key: '', secret: '' })
-      })
-      api.requester = new Requester(config)
+      api.requester = new Requester(this.storeAuth(api, options.conf))
       this.apis[api.slug] = api
     })
 
@@ -55,7 +40,7 @@ export class Controller {
           if (typeof this.apis[key].config === 'undefined') {
             this.apis[key].config = {}
           }
-          this.apis[key].requester = new Requester(this.apis[key].config)
+          this.apis[key].requester = new Requester(this.storeAuth(this.apis[key], this.apis[key].config))
         })
       } else if (typeof opt1 === 'string' && typeof opt2 !== 'undefined' && opt2.constructor === Object) {
         if (typeof this.apis[opt1] !== 'undefined' && !replace) {
@@ -66,8 +51,27 @@ export class Controller {
         if (typeof this.apis[opt1].config === 'undefined') {
           this.apis[opt1].config = {}
         }
-        this.apis[opt1].requester = new Requester(this.apis[opt1].config)
+        this.apis[opt1].requester = new Requester(this.storeAuth(this.apis[opt1], this.apis[opt1].config))
       }
+    }
+
+    this.storeAuth = (api, config) => {
+      let config = Object.assign(api.config, config)
+      if (typeof config.key !== 'undefined') {
+        localStorage.setItem('papir.' + api.slug + '.key', config.key)
+      }
+      if (typeof config.secret !== 'undefined') {
+        localStorage.setItem('papir.' + api.slug + '.secret', config.secret)
+      }
+      if (typeof config.token !== 'undefined' && config.token.constructor === Object) {
+        localStorage.setItem('papir.' + api.slug + '.token', JSON.stringify(config.token))
+      }
+      config = Object.assign(config, {
+        key: (localStorage.getItem('papir.' + api.slug + '.key') !== null ? localStorage.getItem('papir.' + api.slug + '.key') : ''),
+        secret: (localStorage.getItem('papir.' + api.slug + '.secret') !== null ? localStorage.getItem('papir.' + api.slug + '.secret') : ''),
+        token: (localStorage.getItem('papir.' + api.slug + '.token') !== null ? JSON.parse(localStorage.getItem('papir.' + api.slug + '.token')) : { key: '', secret: '' })
+      })
+      return config
     }
   }
 }
