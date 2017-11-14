@@ -55,6 +55,7 @@ export default class Prop {
      * Check if prop is changed
      */
     accessor.changed = (changed = null) => {
+      let isChanged = false
       if (changed !== null && !changed) {
         try {
           value = JSON.parse(JSON.stringify(accessor.value))
@@ -68,11 +69,24 @@ export default class Prop {
       } else if (changed !== null && changed) {
         value = accessor.value !== null ? null : 0
       }
-      if (typeof accessor.value !== 'undefined') {
-        return JSON.stringify(accessor.value) !== JSON.stringify(value)
+      if (typeof accessor.value !== 'undefined' && accessor.value !== null) {
+        if (accessor.value.constructor === value.constructor) {
+          if (accessor.value.constructor === Array) {
+            if (accessor.value.length !== value.length) {
+              isChanged = true
+            } else {
+              isChanged = JSON.stringify(accessor.value) !== JSON.stringify(value)
+            }
+          } else {
+            isChanged = JSON.stringify(accessor.value) !== JSON.stringify(value)
+          }
+        } else {
+          isChanged = true
+        }
       } else {
-        return false
+        isChanged = typeof accessor.value !== typeof value
       }
+      return isChanged
     }
 
     /**

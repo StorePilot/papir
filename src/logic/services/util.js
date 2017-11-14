@@ -117,6 +117,10 @@ class Util {
             value = moment(value).format(options.dateFormat)
           } else if (value.constructor === Array && name !== null) {
             let i = 0
+            // Handle empty arrays @todo - Make customable values. Ex. null, '', '[]', 0 or delete it etc.
+            if (value.length === 0) {
+              value = [{ id: null }]
+            }
             value.forEach(val => {
               let arrayIdentifier = (options.arrayIndexOpen + (options.indexArrays ? i : '') + options.arrayIndexClose)
               querystring += this.querystring.stringify(val, Object.assign(options, {
