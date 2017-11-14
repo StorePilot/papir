@@ -446,7 +446,7 @@ export default class Requester {
       let scope = this
       let conf = JSON.parse(JSON.stringify(this.getConf))
       conf.addDataToQuery = false
-      conf.addAuthHeaders = true
+      conf.authHeader = true
       return new Promise((resolve, reject) => {
         scope.get(url, null, false, false, conf).then(res => {
           resolve(res)
@@ -461,7 +461,7 @@ export default class Requester {
       let scope = this
       let conf = JSON.parse(JSON.stringify(this.getConf))
       conf.addDataToQuery = false
-      conf.addAuthHeaders = true
+      conf.authHeader = true
       conf.key = requestToken
       conf.secret = requestTokenSecret
       return new Promise((resolve, reject) => {

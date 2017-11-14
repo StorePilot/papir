@@ -147,7 +147,7 @@
       <el-tab-pane label="Headers">
         <h5>Add Authentication Params to Header</h5>
         <el-switch
-            v-model="api.config.addAuthHeaders"
+            v-model="api.config.authHeader"
             on-color="#13ce66"
             off-color="#ff4949">
         </el-switch>
