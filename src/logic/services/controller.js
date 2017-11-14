@@ -14,21 +14,6 @@ export class Controller {
     this.apis = {}
     this.server = options.serverBase
 
-    // Load and configure Apis
-    options.apis.forEach(api => {
-      if (api.default || this.default === null) {
-        this.default = api.slug
-      }
-      if (this.server !== null && (typeof api.base === 'undefined' || api.base === '')) {
-        api.base = this.server
-      }
-      if (typeof api.config === 'undefined') {
-        api.config = {}
-      }
-      api.requester = new Requester(this.storeAuth(api, options.conf))
-      this.apis[api.slug] = api
-    })
-
     this.config = (opt1, opt2, replace = false) => {
       if (typeof opt2 === 'undefined' && typeof opt1 !== 'undefined' && opt1.constructor === Object) {
         Object.keys(this.apis).forEach(key => {
@@ -73,6 +58,21 @@ export class Controller {
       })
       return config
     }
+
+    // Load and configure Apis
+    options.apis.forEach(api => {
+      if (api.default || this.default === null) {
+        this.default = api.slug
+      }
+      if (this.server !== null && (typeof api.base === 'undefined' || api.base === '')) {
+        api.base = this.server
+      }
+      if (typeof api.config === 'undefined') {
+        api.config = {}
+      }
+      api.requester = new Requester(this.storeAuth(api, options.conf))
+      this.apis[api.slug] = api
+    })
   }
 }
 
