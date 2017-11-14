@@ -69,7 +69,7 @@ export default class Prop {
       } else if (changed !== null && changed) {
         value = accessor.value !== null ? null : 0
       }
-      if (typeof accessor.value !== 'undefined' && accessor.value !== null) {
+      if (typeof accessor.value !== 'undefined' && accessor.value !== null && value !== null) {
         if (accessor.value.constructor === value.constructor) {
           if (accessor.value.constructor === Array) {
             if (accessor.value.length !== value.length) {
