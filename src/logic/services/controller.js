@@ -56,7 +56,7 @@ export class Controller {
     }
 
     this.storeAuth = (api, config) => {
-      let config = Object.assign(api.config, config)
+      config = Object.assign(api.config, config)
       if (typeof config.key !== 'undefined') {
         localStorage.setItem('papir.' + api.slug + '.key', config.key)
       }
