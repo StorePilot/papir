@@ -5,11 +5,11 @@ import Requester from './requester'
  */
 export class Controller {
   constructor (options = {}) {
-    options = Object.assign({
-      config: {},
-      serverBase: null,
-      apis: require('../apis.json')
-    }, options)
+    options = {
+      config: typeof options.config !== 'undefined' ? options.config : {},
+      serverBase: typeof options.serverBase !== 'undefined' ? options.serverBase : null,
+      apis: typeof options.apis !== 'undefined' ? options.apis : require('../apis.json')
+    }
     this.default = null
     this.apis = {}
     this.server = options.serverBase
@@ -69,8 +69,8 @@ export class Controller {
       if (typeof api.config === 'undefined') {
         api.config = {}
       }
-      options.conf = Object.assign(api.config, options.conf)
-      api.requester = new Requester(this.storeAuth(api, options.conf))
+      options.config = Object.assign(api.config, options.config)
+      api.requester = new Requester(this.storeAuth(api, options.config))
       this.apis[api.slug] = api
     })
   }

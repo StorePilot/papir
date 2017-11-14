@@ -418,7 +418,9 @@ export default class Requester {
               } else {
                 request.url += conf.delimiter + param + conf.splitter + nonce
               }
-            } catch (e) {}
+            } catch (e) {
+              console.error(e)
+            }
           }
         }
       }
