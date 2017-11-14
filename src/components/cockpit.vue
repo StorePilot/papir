@@ -149,7 +149,6 @@
               authHeader: false,
               indexArrays: true,
               addDataToQuery: true,
-              authHeader: false,
               nonce: '',
               nonceLength: 6,
               nonceTale: '', // _wpnonce=wcApiSettings.nonce
