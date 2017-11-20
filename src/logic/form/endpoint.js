@@ -312,80 +312,82 @@ export default class Endpoint {
           if (parsed.constructor !== Object && parsed.constructor !== Array) {
             parsed = JSON.parse(parsed)
           }
-          if (!batch && !multiple) {
-            // Parse Data
-            response = accessor.set(parsed, false, true, key)
-          } else if (batch && map !== null && typeof map !== 'undefined') {
-            if (parsed !== null && parsed.constructor === Object) {
-              let match = 0
-              if (typeof map.batch !== 'undefined') {
-                Object.keys(map.batch).forEach(key => {
-                  if (typeof parsed[key] !== 'undefined') {
-                    match++
-                  }
+          if (typeof parsed !== 'undefined' && parsed !== null && (parsed.constructor === Object || parsed.constructor === Array)) {
+            if (!batch && !multiple) {
+              // Parse Data
+              response = accessor.set(parsed, false, true, key)
+            } else if (batch && map !== null && typeof map !== 'undefined') {
+              if (parsed !== null && parsed.constructor === Object) {
+                let match = 0
+                if (typeof map.batch !== 'undefined') {
+                  Object.keys(map.batch).forEach(key => {
+                    if (typeof parsed[key] !== 'undefined') {
+                      match++
+                    }
+                  })
+                }
+                // If response has batch mapping keys, resolve by keys
+                if (match > 0 || parsed.constructor === Array) {
+                  // Exchange all without delete
+                  Object.keys(parsed).forEach(key => {
+                    let method = parsed[key]
+                    if (
+                      (typeof map.batch !== 'undefined' && typeof map.batch.delete !== 'undefined' && method !== map.batch.delete) ||
+                      ((typeof map.batch === 'undefined' || typeof map.batch.delete === 'undefined') && method !== 'delete')
+                    ) {
+                      method.forEach(child => {
+                        let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(child, predefined))
+                        accessor.exchange(endpoint)
+                      })
+                    } else {
+                      method.forEach(child => {
+                        let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(child, predefined))
+                        accessor.exchange(endpoint, false, true)
+                      })
+                    }
+                  })
+                } else {
+                  // If response has no keys mapped in batch, expect one instance
+                  let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(parsed, predefined))
+                  accessor.exchange(endpoint)
+                }
+              } else if (parsed.constructor === Array) {
+                // If response is array expect multiple instances
+                parsed.forEach(obj => {
+                  let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(obj, predefined))
+                  accessor.exchange(endpoint)
                 })
               }
-              // If response has batch mapping keys, resolve by keys
-              if (match > 0 || parsed.constructor === Array) {
-                // Exchange all without delete
-                Object.keys(parsed).forEach(key => {
-                  let method = parsed[key]
-                  if (
-                    (typeof map.batch !== 'undefined' && typeof map.batch.delete !== 'undefined' && method !== map.batch.delete) ||
-                    ((typeof map.batch === 'undefined' || typeof map.batch.delete === 'undefined') && method !== 'delete')
-                  ) {
-                    method.forEach(child => {
-                      let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(child, predefined))
-                      accessor.exchange(endpoint)
-                    })
-                  } else {
-                    method.forEach(child => {
-                      let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(child, predefined))
-                      accessor.exchange(endpoint, false, true)
-                    })
-                  }
-                })
-              } else {
-                // If response has no keys mapped in batch, expect one instance
-                let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(parsed, predefined))
-                accessor.exchange(endpoint)
+            } else if (multiple && map !== null && typeof map !== 'undefined') {
+              if (response.config.method.toLowerCase() === 'get') {
+                accessor.children = []
               }
-            } else if (parsed.constructor === Array) {
-              // If response is array expect multiple instances
-              parsed.forEach(obj => {
-                let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(obj, predefined))
-                accessor.exchange(endpoint)
+              parsed.forEach(child => {
+                let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(child, predefined))
+                if (response.config.method.toLowerCase() === 'get') {
+                  accessor.children.push(endpoint)
+                } else {
+                  if (!accessor.exchange(endpoint)) {
+                    accessor.children.push(endpoint)
+                  }
+                }
               })
             }
-          } else if (multiple && map !== null && typeof map !== 'undefined') {
-            if (response.config.method.toLowerCase() === 'get') {
-              accessor.children = []
-            }
-            parsed.forEach(child => {
-              let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(child, predefined))
-              if (response.config.method.toLowerCase() === 'get') {
-                accessor.children.push(endpoint)
-              } else {
-                if (!accessor.exchange(endpoint)) {
-                  accessor.children.push(endpoint)
+            // Parse Headers
+            if (key === null) {
+              Object.keys(headers).forEach(key => {
+                if (
+                  map !== null &&
+                  typeof map !== 'undefined' &&
+                  typeof map.headers !== 'undefined' &&
+                  typeof map.headers[key] !== 'undefined'
+                ) {
+                  accessor.headers.mapped[map.headers[key]] = headers[key]
+                } else {
+                  accessor.headers.unmapped[key] = headers[key]
                 }
-              }
-            })
-          }
-          // Parse Headers
-          if (key === null) {
-            Object.keys(headers).forEach(key => {
-              if (
-                map !== null &&
-                typeof map !== 'undefined' &&
-                typeof map.headers !== 'undefined' &&
-                typeof map.headers[key] !== 'undefined'
-              ) {
-                accessor.headers.mapped[map.headers[key]] = headers[key]
-              } else {
-                accessor.headers.unmapped[key] = headers[key]
-              }
-            })
+              })
+            }
           }
           resolved = true
           resolve(response)
