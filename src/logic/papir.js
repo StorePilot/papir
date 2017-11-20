@@ -1,6 +1,7 @@
 import Controller from './services/controller'
 import Requester from './services/requester'
 import Endpoint from './form/endpoint'
+import List from './form/list'
 import Prop from './form/prop'
 
 /**
@@ -12,6 +13,7 @@ class Papir {
     this.init = (options = opt) => {
       this.controller = new Controller(options)
       this.Endpoint = Endpoint
+      this.List = List
       this.Requester = Requester
       this.Prop = Prop
     }
@@ -20,6 +22,7 @@ class Papir {
       Vue.prototype.$pap = {
         controller: new Controller(options),
         Endpoint: Endpoint,
+        List: List,
         Requester: Requester,
         Prop: Prop
       }
