@@ -52,7 +52,6 @@ export default class Requester {
       nonceTale: '',
       timestampLength: 30,
       indexArrays: true,
-      emptyParams: false,
       requester: null,
       base64: true,
       ampersand: true,

@@ -138,7 +138,7 @@
               algorithm: 'HMAC-SHA1',
               base64: true,
               sort: true,
-              emptyParams: false,
+              keepEmpty: false,
               key: '',
               secret: '',
               token: {

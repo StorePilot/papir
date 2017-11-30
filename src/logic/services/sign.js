@@ -20,7 +20,7 @@ class Sign {
         nonce: '',
         nonceLength: 6,
         timestampLength: 10,
-        emptyParams: false,
+        keepEmpty: true,
         requester: null,
         base64: true,
         ampersand: true,
@@ -81,7 +81,7 @@ class Sign {
             value: conf.requester
           })
         }
-        let paramString = scope.paramString(mergedParams, conf.emptyParams, conf.sort)
+        let paramString = scope.paramString(mergedParams, conf.keepEmpty, conf.sort)
         mergedParams = paramString.decoded
         baseString += encode.encode(paramString.string)
 
@@ -164,13 +164,13 @@ class Sign {
       }
     }
 
-    this.paramString = (params, emptyParams = false, sort = true) => {
+    this.paramString = (params, keepEmpty = true, sort = true) => {
       let paramString = ''
       let enc = []
       params.forEach((param) => {
         if (param.value !== '') {
           enc.push(param.key + '=' + param.value + '&')
-        } else if (param.value === '' && param.key !== 'oauth_token' && emptyParams) {
+        } else if (param.value === '' && param.key !== 'oauth_token' && keepEmpty) {
           enc.push(param.key + '=&')
         }
       })

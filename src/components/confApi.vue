@@ -198,7 +198,7 @@
         </el-switch>
         <h5>Keep empty params</h5>
         <el-switch
-            v-model="api.config.emptyParams"
+            v-model="api.config.keepEmpty"
             on-color="#13ce66"
             off-color="#ff4949">
         </el-switch>
