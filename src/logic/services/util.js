@@ -97,7 +97,9 @@ class Util {
           name = encode.encode(name, options.protocol, options.encodeNull)
         }
         try {
-          value = JSON.parse(value)
+          if (value !== "\"\"") {
+            value = JSON.parse(value)
+          }
         } catch (e) {} finally {
           if (typeof value === 'undefined' && name !== null) {
             // undefined
