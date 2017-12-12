@@ -1133,98 +1133,112 @@ export default class Endpoint {
         create: true,
         save: true,
         delete: false,
-        merge: true // Merge with parent props if any (usually there is none)
+        merge: true, // Merge with parent props if any (usually there is none)
+        limit: 100, // Split requests into limited amount of children
+        from: 0 // Exclude children before index from request
       }, options)
       let data = {}
       // Handle create
       if (options.create) {
         let hook = (map !== null && typeof map !== 'undefined' && typeof map.batch !== 'undefined' && typeof map.batch.create !== 'undefined') ? map.batch.create : 'create'
         data[hook] = []
+        let i = 0
         accessor.children.forEach(child => {
-          // Create Creation Identifier
-          if (child.identifier === null || child.identifier.value === null) {
-            if (child.shared.map !== null && typeof child.shared.map !== 'undefined' && typeof child.shared.map.creationIdentifier !== 'undefined') {
-              let identifier = child.shared.map.creationIdentifier
-              let prop = identifier.split('=')[0]
-              let val = identifier.substring((prop.length + 1))
-              // Resolve mapping
-              if (typeof child.shared.map.props !== 'undefined' && typeof child.shared.map.props[prop] !== 'undefined') {
-                prop = child.shared.map.props[prop]
-              }
-              // Check if property exist and make reference to prop
-              if (!child.reserved(prop) && typeof child[prop] !== 'undefined') {
-                prop = child[prop]
-              } else if (child.reserved(prop) && typeof child.invalids[prop] !== 'undefined') {
-                prop = child.invalids[prop]
-              } else {
-                // Create prop if not exist
-                if (!child.reserved(prop)) {
-                  prop = child[prop] = new Prop(child, prop)
-                } else {
-                  prop = child.invalids[prop] = new Prop(child, prop)
+          if (i >= options.from && i < (options.from + options.limit)) {
+            // Create Creation Identifier
+            if (child.identifier === null || child.identifier.value === null) {
+              if (child.shared.map !== null && typeof child.shared.map !== 'undefined' && typeof child.shared.map.creationIdentifier !== 'undefined') {
+                let identifier = child.shared.map.creationIdentifier
+                let prop = identifier.split('=')[0]
+                let val = identifier.substring((prop.length + 1))
+                // Resolve mapping
+                if (typeof child.shared.map.props !== 'undefined' && typeof child.shared.map.props[prop] !== 'undefined') {
+                  prop = child.shared.map.props[prop]
                 }
-              }
-              // Generate creation identifier
-              let id = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 15)
-              child.shared.creationIdentifier = id
-              if (val.length > 0) {
-                val = JSON.parse(val.replace('identifier', id))
-                if (prop.value === null) {
-                  prop.value = val
+                // Check if property exist and make reference to prop
+                if (!child.reserved(prop) && typeof child[prop] !== 'undefined') {
+                  prop = child[prop]
+                } else if (child.reserved(prop) && typeof child.invalids[prop] !== 'undefined') {
+                  prop = child.invalids[prop]
                 } else {
-                  if (prop.value.constructor === Array && val.constructor === Array) {
-                    prop.value = prop.value.concat(val)
-                  } else if (prop.value.constructor !== Array && val.constructor !== Array) {
-                    prop.value = Object.assign(prop.value, val)
+                  // Create prop if not exist
+                  if (!child.reserved(prop)) {
+                    prop = child[prop] = new Prop(child, prop)
+                  } else {
+                    prop = child.invalids[prop] = new Prop(child, prop)
                   }
                 }
-              } else {
-                prop.value = id
-              }
-            }
-            let withEmpty = child.removeIdentifiers(child.reverseMapping(child.props()))
-            let results = {}
-            if (!config.post.keepNull) {
-              Object.keys(withEmpty).forEach(key => {
-                if (withEmpty[key] !== null) {
-                  results[key] = withEmpty[key]
+                // Generate creation identifier
+                let id = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 15)
+                child.shared.creationIdentifier = id
+                if (val.length > 0) {
+                  val = JSON.parse(val.replace('identifier', id))
+                  if (prop.value === null) {
+                    prop.value = val
+                  } else {
+                    if (prop.value.constructor === Array && val.constructor === Array) {
+                      prop.value = prop.value.concat(val)
+                    } else if (prop.value.constructor !== Array && val.constructor !== Array) {
+                      prop.value = Object.assign(prop.value, val)
+                    }
+                  }
+                } else {
+                  prop.value = id
                 }
-              })
-            } else {
-              results = withEmpty
+              }
+              let withEmpty = child.removeIdentifiers(child.reverseMapping(child.props()))
+              let results = {}
+              if (!config.post.keepNull) {
+                Object.keys(withEmpty).forEach(key => {
+                  if (withEmpty[key] !== null) {
+                    results[key] = withEmpty[key]
+                  }
+                })
+              } else {
+                results = withEmpty
+              }
+              data[hook].push(results)
             }
-            data[hook].push(results)
           }
+          i++
         })
       }
       // Handle save
       if (options.save) {
         let hook = (map !== null && typeof map !== 'undefined' && typeof map.batch !== 'undefined' && typeof map.batch.save !== 'undefined') ? map.batch.save : 'save'
         data[hook] = []
+        let i = 0
         accessor.children.forEach(child => {
-          if (child.identifier !== null && child.identifier.value !== null) {
-            // If endpoint has identifier, secure that identifier is added for update and only post changes
-            let obj = child.changes()
-            obj[child.identifier.key] = child.identifier.value
-            data[hook].push(accessor.reverseMapping(obj))
-          } else if (child.identifier === null) {
-            // If endpoint has no identifier, add the whole child, and not only props
-            data[hook].push(accessor.reverseMapping(child.props()))
+          if (i >= options.from && i < (options.from + options.limit)) {
+            if (child.identifier !== null && child.identifier.value !== null) {
+              // If endpoint has identifier, secure that identifier is added for update and only post changes
+              let obj = child.changes()
+              obj[child.identifier.key] = child.identifier.value
+              data[hook].push(accessor.reverseMapping(obj))
+            } else if (child.identifier === null) {
+              // If endpoint has no identifier, add the whole child, and not only props
+              data[hook].push(accessor.reverseMapping(child.props()))
+            }
           }
+          i++
         })
       }
       // Handle delete
       if (options.delete) {
         let hook = (map !== null && typeof map !== 'undefined' && typeof map.batch !== 'undefined' && typeof map.batch.delete !== 'undefined') ? map.batch.delete : 'delete'
         data[hook] = []
+        let i = 0
         accessor.children.forEach(child => {
-          if (child.identifier !== null && child.identifier.value !== null) {
-            // If endpoint has identifier only add id to array
-            data[hook].push(child.identifier.value)
-          } else if (child.identifier === null) {
-            // If endpoint has no identifier, add the whole child, and not only props
-            data[hook].push(accessor.reverseMapping(child.props()))
+          if (i >= options.from && i < (options.from + options.limit)) {
+            if (child.identifier !== null && child.identifier.value !== null) {
+              // If endpoint has identifier only add id to array
+              data[hook].push(child.identifier.value)
+            } else if (child.identifier === null) {
+              // If endpoint has no identifier, add the whole child, and not only props
+              data[hook].push(accessor.reverseMapping(child.props()))
+            }
           }
+          i++
         })
       }
       // Handle merge
@@ -1255,8 +1269,19 @@ export default class Endpoint {
           true
         ).then(response => {
           accessor.shared.handleSuccess(response, replace, null, true).then(results => {
-            stopLoader(loadSlug)
-            resolve(accessor)
+            if ((options.from + options.limit) < accessor.children.length) {
+              options.from += options.limit
+              accessor.batch(options, apiSlug, args, replace, perform, map).then(results => {
+                stopLoader(loadSlug)
+                resolve(accessor)
+              }).catch(error => {
+                stopLoader(loadSlug)
+                reject(error)
+              })
+            } else {
+              stopLoader(loadSlug)
+              resolve(accessor)
+            }
           }).catch(error => {
             stopLoader(loadSlug)
             reject(error)
