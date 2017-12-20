@@ -120,16 +120,15 @@ class Util {
           } else if (value.constructor === Array && name !== null) {
             let i = 0
             // Handle empty arrays @todo - Make customable values. Ex. null, '', '[]', 0 or delete it etc.
-            if (value.length === 0) {
-              value = [{ id: null }]
+            if (value.length !== 0) {
+              value.forEach(val => {
+                let arrayIdentifier = (options.arrayIndexOpen + (options.indexArrays ? i : '') + options.arrayIndexClose)
+                querystring += this.querystring.stringify(val, Object.assign(options, {
+                  name: name + (options.encodeNames ? encode.encode(arrayIdentifier, options.protocol, options.encodeNull) : arrayIdentifier)
+                }), false)
+                i++
+              })
             }
-            value.forEach(val => {
-              let arrayIdentifier = (options.arrayIndexOpen + (options.indexArrays ? i : '') + options.arrayIndexClose)
-              querystring += this.querystring.stringify(val, Object.assign(options, {
-                name: name + (options.encodeNames ? encode.encode(arrayIdentifier, options.protocol, options.encodeNull) : arrayIdentifier)
-              }), false)
-              i++
-            })
             // Array
           } else if (value.constructor === Object) {
             Object.keys(value).forEach(key => {
@@ -169,6 +168,17 @@ class Util {
             } else if (name !== null && name !== '' && options.keepEmpty) {
               querystring += name + options.splitter + options.delimiter
             }
+          } else if (!error && value.constructor === Array && value.length === 0) {
+            value = ''
+            if (options.keepNull) {
+              value = null
+            }
+            if (options.encodeValues && options.keepNull) {
+              value = encode.encode(value, options.protocol, options.encodeNull)
+            }
+            let arrayIdentifier = (options.arrayIndexOpen + (options.indexArrays ? 0 : '') + options.arrayIndexClose)
+            let key = options.encodeNames ? encode.encode(arrayIdentifier, options.protocol, options.encodeNull) : arrayIdentifier
+            querystring += name + key + options.splitter + value + options.delimiter
           }
         }
         // Remove last delimiter
