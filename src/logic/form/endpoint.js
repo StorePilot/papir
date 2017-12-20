@@ -126,6 +126,9 @@ export default class Endpoint {
         let map = null
         try {
           map = accessor.shared.api.mappings[accessor.shared.endpoint]
+          if (typeof map.config !== 'undefined' && map.config.constructor === Object) {
+            config = Object.assign(config, map.config)
+          }
         } catch (e) { console.error(e) }
         return map
       }

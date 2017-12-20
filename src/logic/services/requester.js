@@ -52,6 +52,8 @@ export default class Requester {
       nonceTale: '',
       timestampLength: 30,
       indexArrays: true,
+      emptyArrayToZero: false,
+      keepArrayTags: true,
       requester: null,
       base64: true,
       ampersand: true,
@@ -260,7 +262,9 @@ export default class Requester {
           encodeValues: conf.encodeValues,
           indexArrays: conf.indexArrays,
           excludes: conf.excludes, // At first level
-          includes: conf.includes // At first level. includes overrides excludes
+          includes: conf.includes, // At first level. includes overrides excludes
+          emptyArrayToZero: conf.emptyArrayToZero,
+          keepArrayTags: conf.keepArrayTags
         }, conf)
         data = null
       }
