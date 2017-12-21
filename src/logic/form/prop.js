@@ -2,7 +2,7 @@
  * Prop
  */
 export default class Prop {
-  constructor (parent, key, value = null) {
+  constructor (parent, key, value = null, config = {}) {
     /**
      * Public Scope
      */
@@ -20,6 +20,25 @@ export default class Prop {
         accessor.value = value
       }
     }
+    // Default Config (config level 0 - greater is stronger)
+    accessor.config = Object.assign({
+      emptyArrayToZero: false,
+      keepArrayTags: true
+    }, parent.shared.config)
+    if (key.constructor === Object) {
+      if (typeof key.config !== 'undefined') {
+        // Mapped Config (config level 1 - greater is stronger)
+        accessor.config = Object.assign(accessor.config, key.config)
+      }
+      if (typeof key.key !== 'undefined') {
+        accessor.key = key.key
+      } else {
+        accessor.key = key
+        console.error('Property is missing key', accessor)
+      }
+    }
+    // Custom Config (config level 2 - greater is stronger)
+    accessor.config = Object.assign(accessor.config, config)
     accessor.key = key
     accessor.loading = false
     accessor.loaders = []
@@ -98,7 +117,7 @@ export default class Prop {
      */
     accessor.save = (apiSlug = parent.shared.defaultApi, args = null, replace = true, create = true, perform = true) => {
       let obj = {}
-      obj[key] = accessor.value
+      obj[key] = accessor.apiValue()
       return new Promise((resolve, reject) => {
         let loadSlug = 'save'
         startLoader(loadSlug)
@@ -177,7 +196,21 @@ export default class Prop {
       })
     }
 
-    this.clone = () => {
+    /**
+     * Returns value ready to be posted to API with configurations applied
+     */
+    accessor.apiValue = () => {
+      if (accessor.value.constructor === Array && accessor.value.length === 0 && accessor.config.emptyArrayToZero) {
+        return 0
+      } else {
+        return accessor.value
+      }
+    }
+
+    /**
+     * Clones the Property
+     */
+    accessor.clone = () => {
       let clone = new Prop(parent, key, value)
       try {
         clone.value = JSON.parse(JSON.stringify(accessor.value))

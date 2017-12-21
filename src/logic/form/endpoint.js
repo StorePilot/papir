@@ -7,13 +7,6 @@ import axios from 'axios'
  */
 export default class Endpoint {
   constructor (endpoint, controller, apiSlug = null, predefined = {}, config = {}) {
-    config = Object.assign({
-      multiple: false,
-      batchIdentifier: 'batch',
-      post: {
-        keepNull: false
-      }
-    }, config)
     /**
      * Public Scope
      */
@@ -37,6 +30,15 @@ export default class Endpoint {
      * Shared Variables
      */
     accessor.shared = {
+      storage: null, // Storage is free to be used for anything on app level
+      // Default Config (config level 0 - greater is stronger)
+      config: {
+        multiple: false,
+        batchIdentifier: 'batch',
+        post: {
+          keepNull: false
+        }
+      },
       api: null,
       defaultApi: apiSlug,
       map: null,
@@ -127,7 +129,8 @@ export default class Endpoint {
         try {
           map = accessor.shared.api.mappings[accessor.shared.endpoint]
           if (typeof map.config !== 'undefined' && map.config.constructor === Object) {
-            config = Object.assign(config, map.config)
+            // Mapped Config (config level 1 - greater is stronger)
+            accessor.shared.config = Object.assign(accessor.shared.config, map.config)
           }
         } catch (e) { console.error(e) }
         return map
@@ -140,6 +143,8 @@ export default class Endpoint {
         accessor.shared.api = accessor.shared.controller.apis[accessor.shared.defaultApi]
         accessor.shared.requester = accessor.shared.api.requester
         accessor.shared.map = resolveMap()
+        // Custom Config (config level 2 - greater is stronger)
+        accessor.shared.config = Object.assign(accessor.shared.config, config)
         accessor.shared.buildProps(accessor.shared.map, accessor.shared.predefined)
       } else {
         accessor.shared.controller = null
@@ -231,9 +236,9 @@ export default class Endpoint {
           key = typeof map.props[key] !== 'undefined' ? map.props[key] : key
         }
         // Replace hook with value from mapped prop
-        if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined' && accessor[key].value !== null && (batch || key !== config.batchIdentifier)) {
+        if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined' && accessor[key].value !== null && (batch || key !== accessor.shared.config.batchIdentifier)) {
           path = path.replace(hook, (slash ? '/' : '') + accessor[key].value)
-        } else if (accessor.reserved(key) && typeof accessor.invalids[key] !== 'undefined' && accessor[key].value !== null && (batch || key !== config.batchIdentifier)) {
+        } else if (accessor.reserved(key) && typeof accessor.invalids[key] !== 'undefined' && accessor[key].value !== null && (batch || key !== accessor.shared.config.batchIdentifier)) {
           path = path.replace(hook, (slash ? '/' : '') + accessor.invalids[key].value)
         } else {
           path = path.replace(hook, '')
@@ -439,7 +444,7 @@ export default class Endpoint {
      * Handle Request Success Response
      */
     accessor.shared.handleSuccess = (response, replace = true, key = null, batch = false, map = accessor.shared.map) => {
-      let multiple = ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || config.multiple)
+      let multiple = ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || accessor.shared.config.multiple)
       return new Promise((resolve, reject) => {
         if (replace) {
           accessor.shared.handleMapping(response, key, batch, multiple).then(results => {
@@ -838,7 +843,8 @@ export default class Endpoint {
       promise = new Promise(resolve => resolve()),
       batch = false
     ) => {
-      conf = Object.assign(config, conf)
+      // Custom Request Config (config level 3 - greater is stronger)
+      conf = Object.assign(accessor.shared.config, conf)
       if (canceler !== false) {
         let cancelHandler = accessor.shared.handleCancellation(cancelers[canceler])
         cancelers[canceler] = cancelHandler.cancellation
@@ -920,7 +926,7 @@ export default class Endpoint {
       perform = true,
       map = accessor.shared.map
     ) => {
-      if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || config.multiple) {
+      if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || accessor.shared.config.multiple) {
         return accessor.batch({ create: create }, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
@@ -988,13 +994,13 @@ export default class Endpoint {
       perform = true,
       map = accessor.shared.map
     ) => {
-      if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || config.multiple) {
+      if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || accessor.shared.config.multiple) {
         return accessor.batch({ save: save }, apiSlug, args, replace, perform, map)
       } else {
         return new Promise((resolve, reject) => {
           let withEmpty = accessor.removeIdentifiers(accessor.reverseMapping())
           let data = {}
-          if (!config.post.keepNull) {
+          if (!accessor.shared.config.post.keepNull) {
             Object.keys(withEmpty).forEach(key => {
               if (withEmpty[key] !== null) {
                 data[key] = withEmpty[key]
@@ -1041,7 +1047,7 @@ export default class Endpoint {
       perform = true,
       map = accessor.shared.map
     ) => {
-      if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || config.multiple) {
+      if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || accessor.shared.config.multiple) {
         return accessor.batch({ save: false, create: false, delete: true }, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
@@ -1191,7 +1197,7 @@ export default class Endpoint {
               }
               let withEmpty = child.removeIdentifiers(child.reverseMapping(child.props()))
               let results = {}
-              if (!config.post.keepNull) {
+              if (!accessor.shared.config.post.keepNull) {
                 Object.keys(withEmpty).forEach(key => {
                   if (withEmpty[key] !== null) {
                     results[key] = withEmpty[key]
@@ -1661,13 +1667,13 @@ export default class Endpoint {
     /**
      * ReverseMapping
      */
-    accessor.reverseMapping = (props = accessor.props(), reference = false, map = accessor.shared.map) => {
+    accessor.reverseMapping = (props = accessor.props(), reference = false, map = accessor.shared.map, apiReady = true) => {
       let reverse = {}
       try {
         // Clone props
         if (reference) {
           Object.keys(props).forEach(key => {
-            reverse[key] = JSON.parse(JSON.stringify(props[key].value))
+            reverse[key] = JSON.parse(JSON.stringify(props[key].apiValue()))
           })
         } else {
           reverse = JSON.parse(JSON.stringify(props))
