@@ -200,7 +200,10 @@ export default class Prop {
      * Returns value ready to be posted to API with configurations applied
      */
     accessor.apiValue = () => {
-      if (accessor.value.constructor === Array && accessor.value.length === 0 && accessor.config.emptyArrayToZero) {
+      if (
+        (accessor.value === null || (accessor.value.constructor === Array && accessor.value.length === 0)) &&
+        accessor.config.emptyArrayToZero
+      ) {
         return 0
       } else {
         return accessor.value
