@@ -177,7 +177,7 @@ export default class Endpoint {
       if (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined') {
         try {
           Object.keys(map.props).forEach(key => {
-            if (!accessor.reserved(key) && typeof accessor[key] === 'undefined' ) {
+            if (!accessor.reserved(key) && typeof accessor[key] === 'undefined') {
               accessor[map.props[key]] = new Prop(accessor, map.props[key], null)
             } else if (key === 'invalids' && typeof accessor.invalids[key] === 'undefined') {
               accessor.invalids[map.props[key]] = new Prop(accessor, map.props[key], null)
