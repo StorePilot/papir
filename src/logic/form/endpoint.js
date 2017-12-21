@@ -948,7 +948,7 @@ export default class Endpoint {
               args,
               accessor.removeIdentifiers(
                 accessor.reverseMapping(
-                  accessor.changes()
+                  accessor.changes(false, false, true)
                 )
               ),
               false,
@@ -1195,7 +1195,7 @@ export default class Endpoint {
                   prop.value = id
                 }
               }
-              let withEmpty = child.removeIdentifiers(child.reverseMapping(child.props()))
+              let withEmpty = child.removeIdentifiers(child.reverseMapping(child.props(false, true)))
               let results = {}
               if (!accessor.shared.config.post.keepNull) {
                 Object.keys(withEmpty).forEach(key => {
@@ -1221,12 +1221,12 @@ export default class Endpoint {
           if (i >= options.from && i < (options.from + options.limit)) {
             if (child.identifier !== null && child.identifier.value !== null) {
               // If endpoint has identifier, secure that identifier is added for update and only post changes
-              let obj = child.changes()
+              let obj = child.changes(false, false, true)
               obj[child.identifier.key] = child.identifier.value
               data[hook].push(accessor.reverseMapping(obj))
             } else if (child.identifier === null) {
               // If endpoint has no identifier, add the whole child, and not only props
-              data[hook].push(accessor.reverseMapping(child.props()))
+              data[hook].push(accessor.reverseMapping(child.props(false, true)))
             }
           }
           i++
@@ -1244,7 +1244,7 @@ export default class Endpoint {
               data[hook].push(child.identifier.value)
             } else if (child.identifier === null) {
               // If endpoint has no identifier, add the whole child, and not only props
-              data[hook].push(accessor.reverseMapping(child.props()))
+              data[hook].push(accessor.reverseMapping(child.props(false, true)))
             }
           }
           i++
@@ -1255,7 +1255,7 @@ export default class Endpoint {
         data = Object.assign(
           accessor.removeIdentifiers(
             accessor.reverseMapping(
-              accessor.props()
+              accessor.props(false, true)
             )
           ),
           data
@@ -1583,7 +1583,7 @@ export default class Endpoint {
      * Get all props including invalids as object without reserved methods / variables
      * reference === true returns reference. Else only value is returned
      */
-    accessor.props = (reference = false) => {
+    accessor.props = (reference = false, apiReady = false) => {
       let obj = {}
       if (reference) {
         Object.keys(accessor).forEach(key => {
@@ -1597,11 +1597,11 @@ export default class Endpoint {
       } else {
         Object.keys(accessor).forEach(key => {
           if (!accessor.reserved(key)) {
-            obj[key] = accessor[key].value
+            obj[key] = apiReady ? accessor[key].apiValue() : accessor[key].value
           }
         })
         Object.keys(accessor.invalids).forEach(key => {
-          obj[key] = accessor[key].value
+          obj[key] = apiReady ? accessor.invalids[key].apiValue() : accessor.invalids[key].value
         })
       }
       return obj
@@ -1611,7 +1611,7 @@ export default class Endpoint {
      * Get all changed props including invalids as object without reserved methods / variables
      * reference === true returns reference. Else only value is returned
      */
-    accessor.changes = (reference = false, arr = false) => {
+    accessor.changes = (reference = false, arr = false, apiReady = false) => {
       let obj = {}
       let array = []
       if (reference) {
@@ -1631,13 +1631,15 @@ export default class Endpoint {
         Object.keys(accessor).forEach(key => {
           if (!accessor.reserved(key)) {
             if (accessor[key].changed()) {
-              arr ? array.push(key, accessor[key].value) : obj[key] = accessor[key].value
+              let val = apiReady ? accessor[key].apiValue() : accessor[key].value
+              arr ? array.push(key, val) : obj[key] = val
             }
           }
         })
         Object.keys(accessor.invalids).forEach(key => {
           if (accessor.invalids[key].changed()) {
-            arr ? array.push([key, accessor.invalids[key].value]) : obj[key] = accessor.invalids[key].value
+            let val = apiReady ? accessor.invalids[key].apiValue() : accessor.invalids[key].value
+            arr ? array.push([key, val]) : obj[key] = val
           }
         })
       }
@@ -1667,13 +1669,20 @@ export default class Endpoint {
     /**
      * ReverseMapping
      */
-    accessor.reverseMapping = (props = accessor.props(), reference = false, map = accessor.shared.map, apiReady = true) => {
+    accessor.reverseMapping = (props = null, reference = false, map = accessor.shared.map, apiReady = true) => {
+      if (props === null) {
+        props = accessor.props(reference, apiReady)
+      }
       let reverse = {}
       try {
         // Clone props
         if (reference) {
           Object.keys(props).forEach(key => {
-            reverse[key] = JSON.parse(JSON.stringify(props[key].apiValue()))
+            if (apiReady) {
+              reverse[key] = JSON.parse(JSON.stringify(props[key].apiValue()))
+            } else {
+              reverse[key] = JSON.parse(JSON.stringify(props[key].value))
+            }
           })
         } else {
           reverse = JSON.parse(JSON.stringify(props))
