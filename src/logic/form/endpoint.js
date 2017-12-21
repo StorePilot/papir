@@ -122,6 +122,20 @@ export default class Endpoint {
      */
     let init = (accessor = this) => {
       /**
+       * If an Endpoint object was passed instead of string, copy values to this endpoint before resolving constructors
+       */
+      if (accessor.shared.endpoint.constructor === Object) {
+        accessor.shared.controller = accessor.shared.endpoint.shared.controller // Replace controller
+        accessor.shared.requester = accessor.shared.endpoint.shared.requester // Replace requester
+        // Replace defaultApi only if no apiSlug was given
+        if (accessor.shared.defaultApi === null) {
+          accessor.shared.defaultApi = accessor.shared.endpoint.shared.defaultApi
+        }
+        accessor.shared.config = accessor.shared.endpoint.shared.config // Replace config
+        accessor.set(accessor.shared.endpoint, false) // Replace props
+        accessor.shared.endpoint = accessor.shared.endpoint.shared.endpoint // Replace endpoint string
+      }
+      /**
        * Map Resolver
        */
       let resolveMap = () => {
@@ -162,9 +176,9 @@ export default class Endpoint {
       if (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined') {
         try {
           Object.keys(map.props).forEach(key => {
-            if (!accessor.reserved(key)) {
+            if (!accessor.reserved(key) && typeof accessor[key] === 'undefined') {
               accessor[map.props[key]] = new Prop(accessor, map.props[key], null)
-            } else if (key === 'invalids') {
+            } else if (key === 'invalids' && typeof accessor.invalids[key] === 'undefined') {
               accessor.invalids[map.props[key]] = new Prop(accessor, map.props[key], null)
             }
           })
@@ -175,6 +189,9 @@ export default class Endpoint {
       }
       try {
         Object.keys(predefined).forEach(key => {
+          if (key === 'downloads') {
+            // console.log(accessor)
+          }
           if (!accessor.reserved(key) && typeof accessor[key] === 'undefined') {
             accessor[key] = new Prop(accessor, key, predefined[key])
           } else if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined') {
@@ -344,25 +361,25 @@ export default class Endpoint {
                       ((typeof map.batch === 'undefined' || typeof map.batch.delete === 'undefined') && method !== 'delete')
                     ) {
                       method.forEach(child => {
-                        let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(child, predefined))
+                        let endpoint = new Endpoint(accessor.shared.endpoint, accessor.shared.controller, accessor.shared.defaultApi, Object.assign(child, accessor.shared.predefined), accessor.shared.config)
                         accessor.exchange(endpoint)
                       })
                     } else {
                       method.forEach(child => {
-                        let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(child, predefined))
+                        let endpoint = new Endpoint(accessor.shared.endpoint, accessor.shared.controller, accessor.shared.defaultApi, Object.assign(child, accessor.shared.predefined), accessor.shared.config)
                         accessor.exchange(endpoint, false, true)
                       })
                     }
                   })
                 } else {
                   // If response has no keys mapped in batch, expect one instance
-                  let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(parsed, predefined))
+                  let endpoint = new Endpoint(accessor.shared.endpoint, accessor.shared.controller, accessor.shared.defaultApi, Object.assign(parsed, accessor.shared.predefined), accessor.shared.config)
                   accessor.exchange(endpoint)
                 }
               } else if (parsed.constructor === Array) {
                 // If response is array expect multiple instances
                 parsed.forEach(obj => {
-                  let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(obj, predefined))
+                  let endpoint = new Endpoint(accessor.shared.endpoint, accessor.shared.controller, accessor.shared.defaultApi, Object.assign(obj, accessor.shared.predefined), accessor.shared.config)
                   accessor.exchange(endpoint)
                 })
               }
@@ -371,7 +388,7 @@ export default class Endpoint {
                 accessor.children = []
               }
               parsed.forEach(child => {
-                let endpoint = new Endpoint(map.child, accessor.shared.controller, apiSlug, Object.assign(child, predefined))
+                let endpoint = new Endpoint(accessor.shared.endpoint, accessor.shared.controller, accessor.shared.defaultApi, Object.assign(child, accessor.shared.predefined), accessor.shared.config)
                 if (response.config.method.toLowerCase() === 'get') {
                   accessor.children.push(endpoint)
                 } else {
@@ -1511,6 +1528,7 @@ export default class Endpoint {
 
     /**
      * Set / Update Properties
+     * Data = Either Endpoint Model or raw JSON if raw = true
      */
     accessor.set = (data, change = true, raw = false, updateKey = null, map = accessor.shared.map) => {
       Object.keys(data).forEach(key => {
@@ -1518,17 +1536,23 @@ export default class Endpoint {
         let prop = key
         if (!raw) {
           if (!accessor.reserved(prop) && typeof hook[prop] === 'undefined' && (updateKey === null || prop === updateKey)) {
-            hook[prop] = new Prop(accessor, prop, data[key].value)
+            hook[prop] = new Prop(accessor, prop, data[key].value, typeof data[key].config !== 'undefined' ? data[key].config : {})
           } else if (!accessor.reserved(prop) && (updateKey === null || prop === updateKey) && hook[prop].value !== data[key].value) {
             hook[prop].value = data[key].value
+            if (typeof data[key].config !== 'undefined') {
+              hook[prop].config = Object.assign(hook[prop].value, data[key].config)
+            }
             hook[prop].changed(change ? (typeof data[key].changed === 'function' ? data[key].changed() : false) : false)
           }
           if (key === 'invalids') {
             Object.keys(data[key]).forEach(prop => {
               if (typeof hook[key][prop] === 'undefined' && (updateKey === null || prop === updateKey)) {
-                hook[key][prop] = new Prop(accessor, prop, data[key].value)
+                hook[key][prop] = new Prop(accessor, prop, data[key].value, typeof data[key].config !== 'undefined' ? data[key].config : {})
               } else if ((updateKey === null || prop === updateKey) && hook[key][prop].value !== data[key][prop].value) {
                 hook[key][prop].value = data[key][prop].value
+                if (typeof data[key][prop].config !== 'undefined') {
+                  hook[key][prop].config = Object.assign(hook[key][prop].value, data[key][prop].config)
+                }
                 hook[key][prop].changed(change ? (typeof data[key][prop].changed === 'function' ? data[key][prop].changed() : false) : false)
               }
             })
@@ -1657,7 +1681,7 @@ export default class Endpoint {
      * Clone Endpoint
      */
     accessor.clone = (change = true) => {
-      let clone = new Endpoint(accessor.shared.endpoint, accessor.shared.controller, accessor.shared.defaultApi, predefined)
+      let clone = new Endpoint(accessor.shared.endpoint, accessor.shared.controller, accessor.shared.defaultApi, accessor.shared.predefined, accessor.shared.config)
       clone.raw = JSON.parse(JSON.stringify(accessor.raw))
       clone.set(accessor, change)
       accessor.children.forEach(child => {
