@@ -12,7 +12,7 @@ export default class List extends Endpoint {
     if (controller !== null) {
       // Check if Endpoint is constructor and try to resolve
       try {
-        endpoint = new Endpoint(controller, apiSlug, predefined, config)
+        endpoint = new Endpoint(controller)
       } catch (e) {
         // Controller was not a constructor
       }

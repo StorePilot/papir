@@ -124,7 +124,7 @@ export default class Endpoint {
       /**
        * If an Endpoint object was passed instead of string, copy values to this endpoint before resolving constructors
        */
-      if (accessor.shared.endpoint.constructor === Object) {
+      if (typeof accessor.shared.endpoint !== 'string') {
         accessor.shared.controller = accessor.shared.endpoint.shared.controller // Replace controller
         accessor.shared.requester = accessor.shared.endpoint.shared.requester // Replace requester
         // Replace defaultApi only if no apiSlug was given
@@ -133,7 +133,6 @@ export default class Endpoint {
         }
         accessor.set(accessor.shared.endpoint, false) // Replace props
         accessor.shared.config = accessor.shared.endpoint.shared.config // Replace config
-        accessor.children = accessor.shared.endpoint.children // Replace children
         accessor.shared.endpoint = accessor.shared.endpoint.shared.endpoint // Replace endpoint string
       }
       /**
@@ -367,7 +366,7 @@ export default class Endpoint {
                           Object.assign(child,
                             accessor.shared.predefined
                           ),
-                          accessor.shared.config
+                          Object.assign(accessor.shared.config, { multiple: false })
                         )
                         accessor.exchange(endpoint)
                       })
@@ -378,7 +377,7 @@ export default class Endpoint {
                           accessor.shared.controller,
                           accessor.shared.defaultApi,
                           Object.assign(child, accessor.shared.predefined),
-                          accessor.shared.config
+                          Object.assign(accessor.shared.config, { multiple: false })
                         )
                         accessor.exchange(endpoint, false, true)
                       })
@@ -391,7 +390,7 @@ export default class Endpoint {
                     accessor.shared.controller,
                     accessor.shared.defaultApi,
                     Object.assign(parsed, accessor.shared.predefined),
-                    accessor.shared.config
+                    Object.assign(accessor.shared.config, { multiple: false })
                   )
                   accessor.exchange(endpoint)
                 }
@@ -403,7 +402,7 @@ export default class Endpoint {
                     accessor.shared.controller,
                     accessor.shared.defaultApi,
                     Object.assign(obj, accessor.shared.predefined),
-                    accessor.shared.config
+                    Object.assign(accessor.shared.config, { multiple: false })
                   )
                   accessor.exchange(endpoint)
                 })
