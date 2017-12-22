@@ -144,7 +144,7 @@ export default class Endpoint {
           map = accessor.shared.api.mappings[accessor.shared.endpoint]
           if (typeof map !== 'undefined' && typeof map.config !== 'undefined' && map.config.constructor === Object) {
             // Mapped Config (config level 1 - greater is stronger)
-            accessor.shared.config = Object.assign(accessor.shared.config, map.config)
+            accessor.shared.config = Object.assign(JSON.parse(JSON.stringify(accessor.shared.config)), map.config)
           }
         } catch (e) { console.error(e) }
         return map
@@ -158,7 +158,7 @@ export default class Endpoint {
         accessor.shared.requester = accessor.shared.api.requester
         accessor.shared.map = resolveMap()
         // Custom Config (config level 2 - greater is stronger)
-        accessor.shared.config = Object.assign(accessor.shared.config, config)
+        accessor.shared.config = Object.assign(JSON.parse(JSON.stringify(accessor.shared.config)), config)
         accessor.shared.buildProps(accessor.shared.map, accessor.shared.predefined)
       } else {
         console.error('No apis is hooked to Controller', accessor.shared.controller)
@@ -194,10 +194,12 @@ export default class Endpoint {
             accessor[key] = new Prop(accessor, key, predefined[key])
           } else if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined') {
             accessor[key].value = predefined[key]
+            accessor[key].changed(false)
           } else if (accessor.reserved(key) && typeof accessor.invalids[key] === 'undefined') {
             accessor.invalids[key] = new Prop(accessor, key, predefined[key])
           } else {
             accessor.invalids[key].value = predefined[key]
+            accessor.invalids[key].changed(false)
           }
         })
       } catch (error) {
@@ -326,6 +328,7 @@ export default class Endpoint {
      * Handle Mapping
      */
     accessor.shared.handleMapping = (response, key = null, batch, multiple, map = accessor.shared.map) => {
+      let conf = JSON.parse(JSON.stringify(accessor.shared.config))
       return new Promise((resolve, reject) => {
         let resolved = false
         let data = response.data // Raw from server
@@ -366,7 +369,7 @@ export default class Endpoint {
                           Object.assign(child,
                             accessor.shared.predefined
                           ),
-                          Object.assign(accessor.shared.config, { multiple: false })
+                          Object.assign(conf, { multiple: false })
                         )
                         accessor.exchange(endpoint)
                       })
@@ -377,7 +380,7 @@ export default class Endpoint {
                           accessor.shared.controller,
                           accessor.shared.defaultApi,
                           Object.assign(child, accessor.shared.predefined),
-                          Object.assign(accessor.shared.config, { multiple: false })
+                          Object.assign(conf, { multiple: false })
                         )
                         accessor.exchange(endpoint, false, true)
                       })
@@ -390,7 +393,7 @@ export default class Endpoint {
                     accessor.shared.controller,
                     accessor.shared.defaultApi,
                     Object.assign(parsed, accessor.shared.predefined),
-                    Object.assign(accessor.shared.config, { multiple: false })
+                    Object.assign(conf, { multiple: false })
                   )
                   accessor.exchange(endpoint)
                 }
@@ -402,7 +405,7 @@ export default class Endpoint {
                     accessor.shared.controller,
                     accessor.shared.defaultApi,
                     Object.assign(obj, accessor.shared.predefined),
-                    Object.assign(accessor.shared.config, { multiple: false })
+                    Object.assign(conf, { multiple: false })
                   )
                   accessor.exchange(endpoint)
                 })
@@ -417,7 +420,7 @@ export default class Endpoint {
                   accessor.shared.controller,
                   accessor.shared.defaultApi,
                   Object.assign(child, accessor.shared.predefined),
-                  Object.assign(accessor.shared.config, { multiple: false })
+                  Object.assign(conf, { multiple: false })
                 )
                 if (response.config.method.toLowerCase() === 'get') {
                   accessor.children.push(endpoint)
@@ -891,7 +894,7 @@ export default class Endpoint {
       batch = false
     ) => {
       // Custom Request Config (config level 3 - greater is stronger)
-      conf = Object.assign(accessor.shared.config, conf)
+      conf = Object.assign(JSON.parse(JSON.stringify(accessor.shared.config)), conf)
       if (canceler !== false) {
         let cancelHandler = accessor.shared.handleCancellation(cancelers[canceler])
         cancelers[canceler] = cancelHandler.cancellation
@@ -1189,7 +1192,7 @@ export default class Endpoint {
         create: true,
         save: true,
         delete: false,
-        merge: true, // Merge with parent props if any (usually there is none)
+        merge: false, // Merge with parent props if any (usually there is none)
         limit: 100, // Split requests into limited amount of children
         from: 0 // Exclude children before index from request
       }, options)
