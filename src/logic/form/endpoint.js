@@ -131,9 +131,9 @@ export default class Endpoint {
         if (accessor.shared.defaultApi === null) {
           accessor.shared.defaultApi = accessor.shared.endpoint.shared.defaultApi
         }
+        accessor.set(accessor.shared.endpoint, false) // Replace props
         accessor.shared.config = accessor.shared.endpoint.shared.config // Replace config
         accessor.children = accessor.shared.endpoint.children // Replace children
-        accessor.set(accessor.shared.endpoint, false) // Replace props
         accessor.shared.endpoint = accessor.shared.endpoint.shared.endpoint // Replace endpoint string
       }
       /**
@@ -162,6 +162,7 @@ export default class Endpoint {
         accessor.shared.config = Object.assign(accessor.shared.config, config)
         accessor.shared.buildProps(accessor.shared.map, accessor.shared.predefined)
       } else {
+        console.error('No apis is hooked to Controller', accessor.shared.controller)
         accessor.shared.controller = null
       }
     }
@@ -417,7 +418,7 @@ export default class Endpoint {
                   accessor.shared.controller,
                   accessor.shared.defaultApi,
                   Object.assign(child, accessor.shared.predefined),
-                  accessor.shared.config
+                  Object.assign(accessor.shared.config, { multiple: false })
                 )
                 if (response.config.method.toLowerCase() === 'get') {
                   accessor.children.push(endpoint)
