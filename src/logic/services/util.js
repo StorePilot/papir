@@ -70,6 +70,7 @@ class Util {
           dateFormat: '', // Default ISO 8601
           keepEmpty: true,
           keepNull: true,
+          keepEmptyArray: true,
           delimiter: '&',
           splitter: '=',
           dotNotation: false,
@@ -79,7 +80,9 @@ class Util {
           excludes: [], // At first level
           includes: [], // At first level. includes overrides excludes
           arrayIndexOpen: '[',
-          arrayIndexClose: ']'
+          arrayIndexClose: ']',
+          emptyArrayToZero: false,
+          keepArrayTags: true
         }, options)
         let querystring = ''
         let name = options.name
@@ -97,7 +100,7 @@ class Util {
           name = encode.encode(name, options.protocol, options.encodeNull)
         }
         try {
-          if (value !== "\"\"") {
+          if (value !== '""') {
             value = JSON.parse(value)
           }
         } catch (e) {} finally {
@@ -120,16 +123,15 @@ class Util {
           } else if (value.constructor === Array && name !== null) {
             let i = 0
             // Handle empty arrays @todo - Make customable values. Ex. null, '', '[]', 0 or delete it etc.
-            if (value.length === 0) {
-              value = [{ id: null }]
+            if (value.length !== 0) {
+              value.forEach(val => {
+                let arrayIdentifier = (options.arrayIndexOpen + (options.indexArrays ? i : '') + options.arrayIndexClose)
+                querystring += this.querystring.stringify(val, Object.assign(options, {
+                  name: name + (options.encodeNames ? encode.encode(arrayIdentifier, options.protocol, options.encodeNull) : arrayIdentifier)
+                }), false)
+                i++
+              })
             }
-            value.forEach(val => {
-              let arrayIdentifier = (options.arrayIndexOpen + (options.indexArrays ? i : '') + options.arrayIndexClose)
-              querystring += this.querystring.stringify(val, Object.assign(options, {
-                name: name + (options.encodeNames ? encode.encode(arrayIdentifier, options.protocol, options.encodeNull) : arrayIdentifier)
-              }), false)
-              i++
-            })
             // Array
           } else if (value.constructor === Object) {
             Object.keys(value).forEach(key => {
@@ -165,9 +167,29 @@ class Util {
               if (options.encodeValues && (value !== null || options.keepNull)) {
                 value = encode.encode(value, options.protocol, options.encodeNull)
               }
-              querystring += name + options.splitter + value + options.delimiter
+              if (options.keepEmpty || options.keepNull || value !== null) {
+                querystring += name + options.splitter + value + options.delimiter
+              }
             } else if (name !== null && name !== '' && options.keepEmpty) {
               querystring += name + options.splitter + options.delimiter
+            }
+          } else if (!error && value.constructor === Array && value.length === 0) {
+            if (options.keepEmptyArray) {
+              value = null
+              if (options.emptyArrayToZero) {
+                value = 0
+              } else if (!options.keepNull) {
+                value = ''
+              }
+              if (options.encodeValues) {
+                value = encode.encode(value, options.protocol, options.encodeNull)
+              }
+              let arrayIdentifier = (options.arrayIndexOpen + (options.indexArrays ? 0 : '') + options.arrayIndexClose)
+              let key = ''
+              if (options.keepArrayTags) {
+                key = options.encodeNames ? encode.encode(arrayIdentifier, options.protocol, options.encodeNull) : arrayIdentifier
+              }
+              querystring += name + key + options.splitter + value + options.delimiter
             }
           }
         }

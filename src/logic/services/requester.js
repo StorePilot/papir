@@ -27,6 +27,7 @@ export default class Requester {
       addDataToQuery: true,
       keepEmpty: true,
       keepNull: true,
+      keepEmptyArray: true,
       protocol: 'rfc3986',
       delimiter: '&',
       splitter: '=',
@@ -52,6 +53,8 @@ export default class Requester {
       nonceTale: '',
       timestampLength: 30,
       indexArrays: true,
+      emptyArrayToZero: false,
+      keepArrayTags: true,
       requester: null,
       base64: true,
       ampersand: true,
@@ -59,7 +62,9 @@ export default class Requester {
       // Conf specific per method type. (Same Options as above)
       get: {},
       post: {
-        keepNull: false
+        keepNull: false,
+        keepEmpty: false,
+        keepEmptyArray: false
       },
       put: {},
       patch: {},
@@ -253,6 +258,7 @@ export default class Requester {
           dateFormat: conf.dateFormat, // Default ISO 8601
           keepEmpty: conf.keepEmpty,
           keepNull: conf.keepNull,
+          keepEmptyArray: conf.keepEmptyArray,
           delimiter: conf.delimiter,
           splitter: conf.splitter,
           dotNotation: conf.dotNotation,
@@ -260,7 +266,9 @@ export default class Requester {
           encodeValues: conf.encodeValues,
           indexArrays: conf.indexArrays,
           excludes: conf.excludes, // At first level
-          includes: conf.includes // At first level. includes overrides excludes
+          includes: conf.includes, // At first level. includes overrides excludes
+          emptyArrayToZero: conf.emptyArrayToZero,
+          keepArrayTags: conf.keepArrayTags
         }, conf)
         data = null
       }
