@@ -10,17 +10,25 @@ import Prop from './form/prop'
 class Papir {
   constructor (opt = {}) {
     // Default integration
-    this.init = (options = opt) => {
-      this.controller = new Controller(options)
+    this.init = (options) => {
+      Object.assign({
+        conf: {},
+        controller: new Controller(options.conf)
+      }, options)
+      this.controller = options.controller
       this.Endpoint = Endpoint
       this.List = List
       this.Requester = Requester
       this.Prop = Prop
     }
     // Vue integration
-    this.install = (Vue, options = opt) => {
+    this.install = (Vue, options) => {
+      Object.assign({
+        conf: {},
+        controller: new Controller(options.conf)
+      }, options)
       Vue.prototype.$pap = {
-        controller: new Controller(options),
+        controller: options.controller,
         Endpoint: Endpoint,
         List: List,
         Requester: Requester,
@@ -29,5 +37,10 @@ class Papir {
     }
   }
 }
-
-export default new Papir()
+let papir = new Papir()
+export { papir as papir }
+export { Controller as Controller }
+export { Requester as Requester }
+export { Endpoint as Endpoint }
+export { Prop as Prop }
+export { List as List }
