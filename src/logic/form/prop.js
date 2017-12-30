@@ -2,7 +2,7 @@
  * Prop
  */
 export default class Prop {
-  constructor (parent, key, value = null, config = {}) {
+  constructor (parent, key, value = null, config = {}, transpiler = null) {
     /**
      * Public Scope
      */
@@ -20,6 +20,7 @@ export default class Prop {
         accessor.value = value
       }
     }
+    accessor.transpiler = transpiler
     // Default Config (config level 0 - greater is stronger)
     accessor.config = Object.assign({
       emptyArrayToZero: false,
@@ -200,7 +201,9 @@ export default class Prop {
      * Returns value ready to be posted to API with configurations applied
      */
     accessor.apiValue = () => {
-      if (
+      if (accessor.transpiler !== null) {
+        return accessor.transpiler(accessor)
+      } else if (
         (accessor.value === null || (accessor.value.constructor === Array && accessor.value.length === 0)) &&
         accessor.config.emptyArrayToZero
       ) {

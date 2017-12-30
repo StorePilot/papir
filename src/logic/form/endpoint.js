@@ -1569,7 +1569,13 @@ export default class Endpoint {
         let prop = key
         if (!raw) {
           if (!accessor.reserved(prop) && typeof hook[prop] === 'undefined' && (updateKey === null || prop === updateKey)) {
-            hook[prop] = new Prop(accessor, prop, data[key].value, typeof data[key].config !== 'undefined' ? data[key].config : {})
+            hook[prop] = new Prop(
+              accessor,
+              prop,
+              data[key].value,
+              typeof data[key].config !== 'undefined' ? data[key].config : {},
+              data[key].transpiler
+            )
           } else if (!accessor.reserved(prop) && (updateKey === null || prop === updateKey) && hook[prop].value !== data[key].value) {
             hook[prop].value = data[key].value
             if (typeof data[key].config !== 'undefined') {
@@ -1580,7 +1586,13 @@ export default class Endpoint {
           if (key === 'invalids') {
             Object.keys(data[key]).forEach(prop => {
               if (typeof hook[key][prop] === 'undefined' && (updateKey === null || prop === updateKey)) {
-                hook[key][prop] = new Prop(accessor, prop, data[key].value, typeof data[key].config !== 'undefined' ? data[key].config : {})
+                hook[key][prop] = new Prop(
+                  accessor,
+                  prop,
+                  data[key].value,
+                  typeof data[key].config !== 'undefined' ? data[key].config : {},
+                  data[key].transpiler
+                )
               } else if ((updateKey === null || prop === updateKey) && hook[key][prop].value !== data[key][prop].value) {
                 hook[key][prop].value = data[key][prop].value
                 if (typeof data[key][prop].config !== 'undefined') {
@@ -1600,7 +1612,13 @@ export default class Endpoint {
               hook[prop].value = data[key]
               hook[prop].changed(change)
             } else if (typeof hook[prop] === 'undefined') {
-              hook[prop] = new Prop(accessor, prop, data[key])
+              hook[prop] = new Prop(
+                accessor,
+                prop,
+                data[key],
+                typeof data[key].config !== 'undefined' ? data[key].config : {},
+                data[key].transpiler
+              )
             } else {
               hook[prop].changed(change)
             }
