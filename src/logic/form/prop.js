@@ -22,11 +22,12 @@ export default class Prop {
     }
     accessor.transpiler = transpiler
     // Default Config (config level 0 - greater is stronger)
+    accessor.config = {
+      emptyArrayToZero: false,
+      keepArrayTags: true
+    }
     if (parent !== null) {
-      accessor.config = Object.assign({
-        emptyArrayToZero: false,
-        keepArrayTags: true
-      }, parent.shared.config)
+      accessor.config = Object.assign(accessor.config, parent.shared.config)
     }
     if (key.constructor === Object) {
       if (typeof key.config !== 'undefined') {
