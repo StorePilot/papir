@@ -2,7 +2,7 @@
  * Prop
  */
 export default class Prop {
-  constructor (parent, key, value = null, config = {}, transpiler = null) {
+  constructor (parent = null, key = null, value = null, config = {}, transpiler = null) {
     /**
      * Public Scope
      */
@@ -22,10 +22,12 @@ export default class Prop {
     }
     accessor.transpiler = transpiler
     // Default Config (config level 0 - greater is stronger)
-    accessor.config = Object.assign({
-      emptyArrayToZero: false,
-      keepArrayTags: true
-    }, parent.shared.config)
+    if (parent !== null) {
+      accessor.config = Object.assign({
+        emptyArrayToZero: false,
+        keepArrayTags: true
+      }, parent.shared.config)
+    }
     if (key.constructor === Object) {
       if (typeof key.config !== 'undefined') {
         // Mapped Config (config level 1 - greater is stronger)
@@ -120,45 +122,49 @@ export default class Prop {
       let obj = {}
       obj[key] = accessor.apiValue()
       return new Promise((resolve, reject) => {
-        let loadSlug = 'save'
-        startLoader(loadSlug)
-        parent.shared.makeRequest(
-          loadSlug,
-          'PUT',
-          apiSlug,
-          args,
-          parent.shared.accessor.removeIdentifiers(
-            parent.shared.accessor.reverseMapping(obj)
-          ),
-          false,
-          {
-            perform: perform
-          }
-        ).then(response => {
-          accessor.raw = response
-          parent.shared.handleSuccess(response, replace, key).then(results => {
-            stopLoader(loadSlug)
-            resolve(accessor)
-          }).catch(error => {
-            stopLoader(loadSlug)
-            reject(error)
-          })
-        }).catch(error => {
-          accessor.raw = error
-          // If could not save, try create and update all properties
-          if (create) {
-            parent.shared.accessor.create(apiSlug, args, replace).then(() => {
+        if (parent !== null) {
+          let loadSlug = 'save'
+          startLoader(loadSlug)
+          parent.shared.makeRequest(
+            loadSlug,
+            'PUT',
+            apiSlug,
+            args,
+            parent.shared.accessor.removeIdentifiers(
+              parent.shared.accessor.reverseMapping(obj)
+            ),
+            false,
+            {
+              perform: perform
+            }
+          ).then(response => {
+            accessor.raw = response
+            parent.shared.handleSuccess(response, replace, key).then(results => {
               stopLoader(loadSlug)
               resolve(accessor)
             }).catch(error => {
               stopLoader(loadSlug)
               reject(error)
             })
-          } else {
-            stopLoader(loadSlug)
-            reject(error)
-          }
-        })
+          }).catch(error => {
+            accessor.raw = error
+            // If could not save, try create and update all properties
+            if (create) {
+              parent.shared.accessor.create(apiSlug, args, replace).then(() => {
+                stopLoader(loadSlug)
+                resolve(accessor)
+              }).catch(error => {
+                stopLoader(loadSlug)
+                reject(error)
+              })
+            } else {
+              stopLoader(loadSlug)
+              reject(error)
+            }
+          })
+        } else {
+          reject('Missing Endpoint')
+        }
       }).catch(error => {
         console.error(error)
       })
@@ -166,32 +172,36 @@ export default class Prop {
 
     accessor.fetch = (apiSlug = parent.shared.defaultApi, args = null, replace = true, perform = true) => {
       return new Promise((resolve, reject) => {
-        let loadSlug = 'fetch'
-        startLoader(loadSlug)
-        parent.shared.makeRequest(
-          loadSlug,
-          'GET',
-          apiSlug,
-          args,
-          null,
-          false,
-          {
-            perform: perform
-          }
-        ).then(response => {
-          accessor.raw = response
-          parent.shared.handleSuccess(response, replace, key).then(results => {
-            stopLoader(loadSlug)
-            resolve(accessor)
+        if (parent !== null) {
+          let loadSlug = 'fetch'
+          startLoader(loadSlug)
+          parent.shared.makeRequest(
+            loadSlug,
+            'GET',
+            apiSlug,
+            args,
+            null,
+            false,
+            {
+              perform: perform
+            }
+          ).then(response => {
+            accessor.raw = response
+            parent.shared.handleSuccess(response, replace, key).then(results => {
+              stopLoader(loadSlug)
+              resolve(accessor)
+            }).catch(error => {
+              stopLoader(loadSlug)
+              reject(error)
+            })
           }).catch(error => {
+            accessor.raw = error
             stopLoader(loadSlug)
             reject(error)
           })
-        }).catch(error => {
-          accessor.raw = error
-          stopLoader(loadSlug)
-          reject(error)
-        })
+        } else {
+          reject('Missing Endpoint')
+        }
       }).catch(error => {
         console.error(error)
       })
@@ -217,7 +227,7 @@ export default class Prop {
      * Clones the Property
      */
     accessor.clone = () => {
-      let clone = new Prop(parent, key, value)
+      let clone = new Prop(parent, accessor.key, accessor.value, accessor.config, accessor.transpiler)
       try {
         clone.value = JSON.parse(JSON.stringify(accessor.value))
       } catch (error) {
