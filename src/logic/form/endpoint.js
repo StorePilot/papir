@@ -595,7 +595,8 @@ export default class Endpoint {
             child.shared.map !== null &&
             typeof child.shared.map !== 'undefined' &&
             typeof child.shared.map.creationIdentifier !== 'undefined' &&
-            typeof child.shared.creationIdentifier !== 'undefined'
+            typeof child.shared.creationIdentifier !== 'undefined' &&
+            child.shared.creationIdentifier !== ''
           ) {
             let identifier = child.shared.map.creationIdentifier
             let prop = identifier.split('=')[0]
@@ -1206,7 +1207,7 @@ export default class Endpoint {
           if (i >= options.from && i < (options.from + options.limit)) {
             // Create Creation Identifier
             if (child.identifier === null || child.identifier.value === null) {
-              if (child.shared.map !== null && typeof child.shared.map !== 'undefined' && typeof child.shared.map.creationIdentifier !== 'undefined') {
+              if (child.shared.map !== null && typeof child.shared.map !== 'undefined' && typeof child.shared.map.creationIdentifier !== 'undefined' && child.shared.map.creationIdentifier !== '') {
                 let identifier = child.shared.map.creationIdentifier
                 let prop = identifier.split('=')[0]
                 let val = identifier.substring((prop.length + 1))

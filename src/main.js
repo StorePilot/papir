@@ -14,7 +14,7 @@ import Vue from 'vue'
 import Quasar from 'quasar'
 import router from './router'
 import TreeView from 'vue-json-tree-view'
-import Papir from './logic/papir'
+import { papir } from './logic/papir'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
 import ElementUI from 'element-ui'
@@ -23,7 +23,7 @@ import contextMenu from 'vue-context-menu'
 Vue.config.productionTip = false
 Vue.use(Quasar) // Install Quasar Framework
 Vue.use(ElementUI)
-Vue.use(Papir)
+Vue.use(papir)
 Vue.use(VueAxios, axios)
 Vue.use(TreeView)
 Vue.use(contextMenu)

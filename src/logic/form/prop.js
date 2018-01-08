@@ -8,6 +8,8 @@ export default class Prop {
      */
     let accessor = this
 
+    accessor.parent = parent
+
     /**
      * Public Variables
      */
