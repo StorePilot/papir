@@ -208,7 +208,7 @@ export default class Endpoint {
       }
       if (map !== null && typeof map !== 'undefined' && typeof map.identifier !== 'undefined' && map.identifier !== null && map.identifier !== '') {
         let mappedIdentifier = map.identifier
-        if (typeof map.props[map.identifier] !== 'undefined') {
+        if (typeof map.props !== 'undefined' && typeof map.props[map.identifier] !== 'undefined') {
           mappedIdentifier = map.props[map.identifier]
         }
         if (!accessor.reserved(mappedIdentifier) && typeof accessor[mappedIdentifier] !== 'undefined') {
