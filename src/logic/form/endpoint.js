@@ -1148,14 +1148,15 @@ export default class Endpoint {
       apiSlug = accessor.shared.defaultApi,
       args = null,
       replace = true,
-      perform = true
+      perform = true,
+      method = 'POST'
     ) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'upload'
         startLoader(loadSlug)
         accessor.shared.makeRequest(
           loadSlug,
-          'PUT',
+          method,
           apiSlug,
           args,
           file,
