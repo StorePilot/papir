@@ -1149,7 +1149,8 @@ export default class Endpoint {
       args = null,
       replace = true,
       perform = true,
-      method = 'POST'
+      method = 'POST',
+      map = false
     ) => {
       return new Promise((resolve, reject) => {
         let loadSlug = 'upload'
@@ -1165,13 +1166,18 @@ export default class Endpoint {
             perform: perform
           }
         ).then(response => {
-          accessor.shared.handleSuccess(response, replace).then(results => {
+          if (map) {
+            accessor.shared.handleSuccess(response, replace).then(results => {
+              stopLoader(loadSlug)
+              resolve(accessor)
+            }).catch(error => {
+              stopLoader(loadSlug)
+              reject(error)
+            })
+          } else {
             stopLoader(loadSlug)
-            resolve(accessor)
-          }).catch(error => {
-            stopLoader(loadSlug)
-            reject(error)
-          })
+            resolve(response)
+          }
         }).catch(error => {
           stopLoader(loadSlug)
           reject(error)
