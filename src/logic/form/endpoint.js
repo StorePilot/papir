@@ -915,6 +915,18 @@ export default class Endpoint {
       })
     }
 
+    accessor.shared.identifier = () => {
+      let identifier = null
+      if (accessor.identifier !== null && typeof accessor.identifier !== 'undefined' && accessor.identifier.key !== null) {
+        if (!accessor.reserved(accessor.identifier.key)) {
+          identifier = accessor[accessor.identifier.key]
+        } else {
+          identifier = accessor.invalids[accessor.identifier.key]
+        }
+      }
+      return identifier
+    }
+
     /**
      * Public / Reserved Method Names
      * @warning Can not be used as a property name in models
@@ -983,7 +995,8 @@ export default class Endpoint {
         return new Promise((resolve, reject) => {
           let loadSlug = 'save'
           startLoader(loadSlug)
-          if (typeof accessor.identifier !== 'undefined' && accessor.identifier.value === null) {
+          let identifier = accessor.shared.identifier()
+          if (identifier !== null && identifier.value === null) {
             accessor.create(apiSlug, args, replace, true, perform).then(response => {
               stopLoader(loadSlug)
               resolve(accessor)
