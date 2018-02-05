@@ -69,8 +69,10 @@ class Util {
           encodeNull: true,
           dateFormat: '', // Default ISO 8601
           keepEmpty: true,
-          keepNull: true,
+          keepEmptyInArrays: true,
           keepEmptyArray: true,
+          keepNull: true,
+          keepNullInArrays: true,
           delimiter: '&',
           splitter: '=',
           dotNotation: false,
@@ -167,10 +169,14 @@ class Util {
               if (options.encodeValues && (value !== null || options.keepNull)) {
                 value = encode.encode(value, options.protocol, options.encodeNull)
               }
-              if (options.keepEmpty || options.keepNull || value !== null) {
+              if (value === '' && (options.keepEmpty || (options.keepEmptyInArrays && !first))) {
+                querystring += name + options.splitter + value + options.delimiter
+              } else if (value !== '' && (options.keepNull || value !== null || (options.keepNullInArrays && !first))) {
                 querystring += name + options.splitter + value + options.delimiter
               }
             } else if (name !== null && name !== '' && options.keepEmpty) {
+              querystring += name + options.splitter + options.delimiter
+            } else if (name !== null && name !== '' && options.keepEmptyInArrays && !first) {
               querystring += name + options.splitter + options.delimiter
             }
           } else if (!error && value.constructor === Array && value.length === 0) {

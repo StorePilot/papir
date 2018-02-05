@@ -26,8 +26,10 @@ export default class Requester {
       name: null, // Root key where data is attached in data
       addDataToQuery: true,
       keepEmpty: true,
-      keepNull: true,
+      keepEmptyInArrays: true,
       keepEmptyArray: true,
+      keepNull: true,
+      keepNullInArrays: true,
       protocol: 'rfc3986',
       delimiter: '&',
       splitter: '=',
@@ -258,7 +260,9 @@ export default class Requester {
           dateFormat: conf.dateFormat, // Default ISO 8601
           keepEmpty: conf.keepEmpty,
           keepNull: conf.keepNull,
+          keepNullInArrays: conf.keepNullInArrays,
           keepEmptyArray: conf.keepEmptyArray,
+          keepEmptyInArrays: conf.keepEmptyInArrays,
           delimiter: conf.delimiter,
           splitter: conf.splitter,
           dotNotation: conf.dotNotation,
