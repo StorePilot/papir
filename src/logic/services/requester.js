@@ -79,7 +79,8 @@ export default class Requester {
     }
 
     this.objMerge = (target, custom) => {
-      return Object.assign(target, custom)
+      let clone = Object.assign({}, target) // Ensures target not to inherit params from custom
+      return Object.assign(clone, custom)
     }
 
     this.conf = this.objMerge(this.conf, customConf)
@@ -221,6 +222,7 @@ export default class Requester {
       upload = false,
       conf = this.conf
     ) => {
+
       /**
        * Correct order of creating a request:
        */
