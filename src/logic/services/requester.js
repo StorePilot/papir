@@ -78,12 +78,8 @@ export default class Requester {
       perform: true // If false, axios config will be returned instead
     }
 
-    this.deepClone = (obj = {}) => {
-      return JSON.parse(JSON.stringify(obj))
-    }
-
     this.objMerge = (target, custom) => {
-      return Object.assign(this.deepClone(target), custom)
+      return Object.assign(target, custom)
     }
 
     this.conf = this.objMerge(this.conf, customConf)
