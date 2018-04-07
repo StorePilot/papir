@@ -350,7 +350,11 @@ export default class Requester {
 
       // 11. Authorize
 
-      if (conf.authentication === 'oauth') {
+      if (typeof conf.authentication === 'function') {
+
+        request = conf.authentication(request, conf)
+
+      } else if (conf.authentication === 'oauth') {
         // OAUTH
 
         // 1. Prepare configuration to be signed
