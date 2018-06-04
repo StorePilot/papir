@@ -109,7 +109,7 @@ export default class Prop {
           isChanged = true
         }
       } else {
-        isChanged = typeof accessor.value !== typeof value
+        isChanged = (typeof accessor.value !== typeof value || accessor.value !== value)
       }
       return isChanged
     }
