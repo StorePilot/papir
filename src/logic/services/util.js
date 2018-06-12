@@ -407,9 +407,9 @@ class Util {
 
 export default new Util()
 
-let clone = (clone, obj) => {
+let clone = (target, obj) => {
   for(let i in obj) {
-    clone[i] = (typeof obj[i] === 'object' && obj[i] !== null) ? clone(obj[i].constructor(), obj[i]) : obj[i]
+    target[i] = (typeof obj[i] === 'object' && obj[i] !== null) ? clone(obj[i].constructor(), obj[i]) : obj[i]
   }
   return clone
 }
