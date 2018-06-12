@@ -1,13 +1,13 @@
 import Prop from './prop'
 import Query from './query'
 import axios from 'axios'
-import { clone } from '../services/util'
+import {clone} from '../services/util'
 
 /**
  * Endpoint
  */
 export default class Endpoint {
-  constructor (endpoint, controller, apiSlug = null, predefined = {}, config = {}) {
+  constructor(endpoint, controller, apiSlug = null, predefined = {}, config = {}) {
     /**
      * Public Scope
      */
@@ -147,7 +147,9 @@ export default class Endpoint {
             // Mapped Config (config level 1 - greater is stronger)
             accessor.shared.config = Object.assign(clone({}, accessor.shared.config), map.config)
           }
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error(e)
+        }
         return map
       }
       /**
@@ -177,20 +179,20 @@ export default class Endpoint {
     accessor.shared.buildProps = (map = accessor.shared.map, predefined = accessor.shared.predefined) => {
       if (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined') {
         try {
-          Object.keys(map.props).forEach(key => {
+          Object.keys(map.props).reduce((prev, key) => {
             if (!accessor.reserved(key) && typeof accessor[key] === 'undefined') {
               accessor[map.props[key]] = new Prop(accessor, map.props[key], null)
             } else if (key === 'invalids' && typeof accessor.invalids[key] === 'undefined') {
               accessor.invalids[map.props[key]] = new Prop(accessor, map.props[key], null)
             }
-          })
+          }, {})
         } catch (error) {
           console.error('Error in property mapping for api ' + accessor.shared.defaultApi)
           console.error(map.props)
         }
       }
       try {
-        Object.keys(predefined).forEach(key => {
+        Object.keys(predefined).reduce((prev, key) => {
           if (!accessor.reserved(key) && typeof accessor[key] === 'undefined') {
             accessor[key] = new Prop(accessor, key, predefined[key])
           } else if (!accessor.reserved(key) && typeof accessor[key] !== 'undefined') {
@@ -202,7 +204,7 @@ export default class Endpoint {
             accessor.invalids[key].value = predefined[key]
             accessor.invalids[key].changed(false)
           }
-        })
+        }, {})
       } catch (error) {
         console.error('Error in predefined properties')
         console.error(predefined)
@@ -246,7 +248,7 @@ export default class Endpoint {
       }
       // Resolve Identifiers. Ex.: {id} or {/parentId} etc...
       let identifiers = accessor.identifiers(path)
-      Object.keys(identifiers).forEach(key => {
+      Object.keys(identifiers).reduce((prev, key) => {
         let slash = identifiers[key].slash
         let hook = identifiers[key].hook
         // Resolve mapping
@@ -261,7 +263,7 @@ export default class Endpoint {
         } else {
           path = path.replace(hook, '')
         }
-      })
+      }, {})
       while (path.indexOf('//') !== -1) {
         path = path.replace('//', '/')
       }
@@ -280,9 +282,10 @@ export default class Endpoint {
         } else if (url[(url.length - 1)] !== '?' && url[(url.length - 1)] !== '&') {
           url += '&'
         }
-        args.forEach(arg => {
+        for (let i = 0, l = args.length; i < l; i++ ) {
+          let arg = args[i]
           url += arg.key + '=' + arg.value + '&'
-        })
+        }
         if (url[(url.length - 1)] === '&' || url[(url.length - 1)] === '?') {
           url = url.slice(0, -1)
         }
@@ -347,22 +350,23 @@ export default class Endpoint {
               if (parsed !== null && parsed.constructor === Object) {
                 let match = 0
                 if (typeof map.batch !== 'undefined') {
-                  Object.keys(map.batch).forEach(key => {
+                  Object.keys(map.batch).reduce((prev, key) => {
                     if (typeof parsed[key] !== 'undefined') {
                       match++
                     }
-                  })
+                  }, {})
                 }
                 // If response has batch mapping keys, resolve by keys
                 if (match > 0 || parsed.constructor === Array) {
                   // Exchange all without delete
-                  Object.keys(parsed).forEach(key => {
+                  Object.keys(parsed).reduce((prev, key) => {
                     let method = parsed[key]
                     if (
                       (typeof map.batch !== 'undefined' && typeof map.batch.delete !== 'undefined' && method !== map.batch.delete) ||
                       ((typeof map.batch === 'undefined' || typeof map.batch.delete === 'undefined') && method !== 'delete')
                     ) {
-                      method.forEach(child => {
+                      for (let i = 0, l = method.length; i < l; i++ ) {
+                        let child = method[i]
                         let endpoint = new Endpoint(
                           accessor,
                           accessor.shared.controller,
@@ -370,23 +374,24 @@ export default class Endpoint {
                           Object.assign(child,
                             accessor.shared.predefined
                           ),
-                          Object.assign(conf, { multiple: false })
+                          Object.assign(conf, {multiple: false})
                         )
                         accessor.exchange(endpoint)
-                      })
+                      }
                     } else {
-                      method.forEach(child => {
+                      for (let i = 0, l = method.length; i < l; i++ ) {
+                        let child = method[i]
                         let endpoint = new Endpoint(
                           accessor,
                           accessor.shared.controller,
                           accessor.shared.defaultApi,
                           Object.assign(child, accessor.shared.predefined),
-                          Object.assign(conf, { multiple: false })
+                          Object.assign(conf, {multiple: false})
                         )
                         accessor.exchange(endpoint, false, true)
-                      })
+                      }
                     }
-                  })
+                  }, {})
                 } else {
                   // If response has no keys mapped in batch, expect one instance
                   let endpoint = new Endpoint(
@@ -394,34 +399,36 @@ export default class Endpoint {
                     accessor.shared.controller,
                     accessor.shared.defaultApi,
                     Object.assign(parsed, accessor.shared.predefined),
-                    Object.assign(conf, { multiple: false })
+                    Object.assign(conf, {multiple: false})
                   )
                   accessor.exchange(endpoint)
                 }
               } else if (parsed.constructor === Array) {
                 // If response is array expect multiple instances
-                parsed.forEach(obj => {
+                for (let i = 0, l = parsed.length; i < l; i++ ) {
+                  let obj = parsed[i]
                   let endpoint = new Endpoint(
                     accessor,
                     accessor.shared.controller,
                     accessor.shared.defaultApi,
                     Object.assign(obj, accessor.shared.predefined),
-                    Object.assign(conf, { multiple: false })
+                    Object.assign(conf, {multiple: false})
                   )
                   accessor.exchange(endpoint)
-                })
+                }
               }
             } else if (multiple && map !== null && typeof map !== 'undefined') {
               if (response.config.method.toLowerCase() === 'get') {
                 accessor.children = []
               }
-              parsed.forEach(child => {
+              for (let i = 0, l = parsed.length; i < l; i++ ) {
+                let child = parsed[i]
                 let endpoint = new Endpoint(
                   accessor,
                   accessor.shared.controller,
                   accessor.shared.defaultApi,
                   Object.assign(child, accessor.shared.predefined),
-                  Object.assign(conf, { multiple: false })
+                  Object.assign(conf, {multiple: false})
                 )
                 if (response.config.method.toLowerCase() === 'get') {
                   accessor.children.push(endpoint)
@@ -430,11 +437,11 @@ export default class Endpoint {
                     accessor.children.push(endpoint)
                   }
                 }
-              })
+              }
             }
             // Parse Headers
             if (key === null) {
-              Object.keys(headers).forEach(key => {
+              Object.keys(headers).reduce((prev, key) => {
                 if (
                   map !== null &&
                   typeof map !== 'undefined' &&
@@ -445,7 +452,7 @@ export default class Endpoint {
                 } else {
                   accessor.headers.unmapped[key] = headers[key]
                 }
-              })
+              }, {})
             }
           }
           resolved = true
@@ -591,7 +598,8 @@ export default class Endpoint {
       // Resolve Creation Identifier
       let resolveCreationIdentifier = (endpoint) => {
         let match
-        accessor.children.forEach(child => {
+        for (let i = 0, l = accessor.children.length; i < l; i++ ) {
+          let child = accessor.children
           if (
             child.shared.map !== null &&
             typeof child.shared.map !== 'undefined' &&
@@ -629,7 +637,7 @@ export default class Endpoint {
               }
             }
           }
-        })
+        }
         return match
       }
       // Find exact match by all props (Reliable)
@@ -639,7 +647,7 @@ export default class Endpoint {
             let props = child.props()
             let endpointProps = endpoint.props()
             let match = true // Expect match
-            Object.keys(props).forEach(key => {
+            Object.keys(props).reduce((prev, key) => {
               if (typeof endpointProps[key] !== 'undefined') {
                 if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
                   // If unchanged props doesnt match, set match to false
@@ -648,12 +656,12 @@ export default class Endpoint {
               } else {
                 match = false
               }
-            })
-            Object.keys(endpointProps).forEach(key => {
+            }, {})
+            Object.keys(endpointProps).reduce((prev, key) => {
               if (typeof props[key] === 'undefined') {
                 match = false
               }
-            })
+            }, {})
             return match
           } else {
             return false
@@ -668,7 +676,7 @@ export default class Endpoint {
             let props = child.props()
             let endpointProps = endpoint.props()
             let match = true // Expect match
-            Object.keys(props).forEach(key => {
+            Object.keys(props).reduce((prev, key) => {
               if (typeof endpointProps[key] !== 'undefined') {
                 if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
                   // If unchanged props doesnt match, set match to false
@@ -677,7 +685,7 @@ export default class Endpoint {
               } else {
                 match = false
               }
-            })
+            }, {})
             return match
           } else {
             return false
@@ -693,7 +701,7 @@ export default class Endpoint {
             let props = child.props()
             let endpointProps = endpoint.props()
             let match = true // Expect match
-            Object.keys(props).forEach(key => {
+            Object.keys(props).reduce((prev, key) => {
               // If not changed prop
               if (typeof changes[key] === 'undefined') {
                 // If new child has same prop
@@ -709,7 +717,7 @@ export default class Endpoint {
                   match = false
                 }
               }
-            })
+            }, {})
             return match
           } else {
             return false
@@ -725,7 +733,7 @@ export default class Endpoint {
             let props = child.props()
             let endpointProps = endpoint.props()
             let match = true // Expect match
-            Object.keys(props).forEach(key => {
+            Object.keys(props).reduce((prev, key) => {
               // If changed prop
               if (typeof changes[key] !== 'undefined') {
                 // If new child has same prop
@@ -741,7 +749,7 @@ export default class Endpoint {
                   match = false
                 }
               }
-            })
+            }, {})
             return match
           } else {
             return false
@@ -757,7 +765,7 @@ export default class Endpoint {
             let props = child.props()
             let endpointProps = endpoint.props()
             let match = true // Expect match
-            Object.keys(props).forEach(key => {
+            Object.keys(props).reduce((prev, key) => {
               // If not changed prop
               if (typeof changes[key] === 'undefined') {
                 // If new child has same prop
@@ -769,7 +777,7 @@ export default class Endpoint {
                   }
                 }
               }
-            })
+            }, {})
             return match
           } else {
             return false
@@ -785,7 +793,7 @@ export default class Endpoint {
             let props = child.props()
             let endpointProps = endpoint.props()
             let match = true // Expect match
-            Object.keys(props).forEach(key => {
+            Object.keys(props).reduce((prev, key) => {
               // If changed prop
               if (typeof changes[key] !== 'undefined') {
                 // If new child has same prop
@@ -797,7 +805,7 @@ export default class Endpoint {
                   }
                 }
               }
-            })
+            }, {})
             return match
           } else {
             return false
@@ -812,7 +820,7 @@ export default class Endpoint {
             let props = child.props()
             let endpointProps = endpoint.props()
             let match = true // Expect match
-            Object.keys(endpointProps).forEach(key => {
+            Object.keys(endpointProps).reduce((prev, key) => {
               if (typeof props[key] !== 'undefined') {
                 if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
                   // If props are unique
@@ -822,7 +830,7 @@ export default class Endpoint {
                 // If existing doesnt have all incoming props
                 match = false
               }
-            })
+            }, {})
             return match
           } else {
             return false
@@ -837,14 +845,14 @@ export default class Endpoint {
             let props = child.props()
             let endpointProps = endpoint.props()
             let match = true // Expect match
-            Object.keys(endpointProps).forEach(key => {
+            Object.keys(endpointProps).reduce((prev, key) => {
               if (typeof props[key] !== 'undefined') {
                 if (JSON.stringify(props[key]) !== JSON.stringify(endpointProps[key])) {
                   // If props are unique
                   match = false
                 }
               }
-            })
+            }, {})
             return match
           } else {
             return false
@@ -991,7 +999,7 @@ export default class Endpoint {
       map = accessor.shared.map
     ) => {
       if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || accessor.shared.config.multiple) {
-        return accessor.batch({ create: create }, apiSlug, args, replace, map)
+        return accessor.batch({create: create}, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
           let loadSlug = 'save'
@@ -1060,17 +1068,17 @@ export default class Endpoint {
       map = accessor.shared.map
     ) => {
       if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || accessor.shared.config.multiple) {
-        return accessor.batch({ save: save }, apiSlug, args, replace, perform, map)
+        return accessor.batch({save: save}, apiSlug, args, replace, perform, map)
       } else {
         return new Promise((resolve, reject) => {
           let withEmpty = accessor.removeIdentifiers(accessor.reverseMapping())
           let data = {}
           if (!accessor.shared.config.post.keepNull) {
-            Object.keys(withEmpty).forEach(key => {
+            Object.keys(withEmpty).reduce((prev, key) => {
               if (withEmpty[key] !== null) {
                 data[key] = withEmpty[key]
               }
-            })
+            }, {})
           } else {
             data = withEmpty
           }
@@ -1113,7 +1121,7 @@ export default class Endpoint {
       map = accessor.shared.map
     ) => {
       if ((map !== null && typeof map !== 'undefined' && typeof map.multiple !== 'undefined' && map.multiple) || accessor.shared.config.multiple) {
-        return accessor.batch({ save: false, create: false, delete: true }, apiSlug, args, replace, map)
+        return accessor.batch({save: false, create: false, delete: true}, apiSlug, args, replace, map)
       } else {
         return new Promise((resolve, reject) => {
           let loadSlug = 'remove'
@@ -1223,8 +1231,8 @@ export default class Endpoint {
       if (options.create) {
         let hook = (map !== null && typeof map !== 'undefined' && typeof map.batch !== 'undefined' && typeof map.batch.create !== 'undefined') ? map.batch.create : 'create'
         data[hook] = []
-        let i = 0
-        accessor.children.forEach(child => {
+        for (let i = 0, l = accessor.children.length; i < l; i++ ) {
+          let child = accessor.children[i]
           if (i >= options.from && i < (options.from + options.limit)) {
             // Create Creation Identifier
             if (child.identifier === null || child.identifier.value === null) {
@@ -1270,26 +1278,25 @@ export default class Endpoint {
               let withEmpty = child.removeIdentifiers(child.reverseMapping(child.props(false, true)))
               let results = {}
               if (!accessor.shared.config.post.keepNull) {
-                Object.keys(withEmpty).forEach(key => {
+                Object.keys(withEmpty).reduce((prev, key) => {
                   if (withEmpty[key] !== null) {
                     results[key] = withEmpty[key]
                   }
-                })
+                }, {})
               } else {
                 results = withEmpty
               }
               data[hook].push(results)
             }
           }
-          i++
-        })
+        }
       }
       // Handle save
       if (options.save) {
         let hook = (map !== null && typeof map !== 'undefined' && typeof map.batch !== 'undefined' && typeof map.batch.save !== 'undefined') ? map.batch.save : 'save'
         data[hook] = []
-        let i = 0
-        accessor.children.forEach(child => {
+        for (let i = 0, l = accessor.children.length; i < l; i++ ) {
+          let child = accessor.children[i]
           if (i >= options.from && i < (options.from + options.limit)) {
             if (child.identifier !== null && child.identifier.value !== null) {
               // If endpoint has identifier, secure that identifier is added for update and only post changes
@@ -1301,15 +1308,14 @@ export default class Endpoint {
               data[hook].push(accessor.reverseMapping(child.props(false, true)))
             }
           }
-          i++
-        })
+        }
       }
       // Handle delete
       if (options.delete) {
         let hook = (map !== null && typeof map !== 'undefined' && typeof map.batch !== 'undefined' && typeof map.batch.delete !== 'undefined') ? map.batch.delete : 'delete'
         data[hook] = []
-        let i = 0
-        accessor.children.forEach(child => {
+        for (let i = 0, l = accessor.children.length; i < l; i++ ) {
+          let child = accessor.children[i]
           if (i >= options.from && i < (options.from + options.limit)) {
             if (child.identifier !== null && child.identifier.value !== null) {
               // If endpoint has identifier only add id to array
@@ -1319,8 +1325,7 @@ export default class Endpoint {
               data[hook].push(accessor.reverseMapping(child.props(false, true)))
             }
           }
-          i++
-        })
+        }
       }
       // Handle merge
       if (options.merge) {
@@ -1586,7 +1591,7 @@ export default class Endpoint {
      * Data = Either Endpoint Model or raw JSON if raw = true
      */
     accessor.set = (data, change = true, raw = false, updateKey = null, map = accessor.shared.map) => {
-      Object.keys(data).forEach(key => {
+      Object.keys(data).reduce((prev, key) => {
         let hook = accessor
         let prop = key
         if (!raw) {
@@ -1606,7 +1611,7 @@ export default class Endpoint {
             hook[prop].changed(change ? (typeof data[key].changed === 'function' ? data[key].changed() : false) : false)
           }
           if (key === 'invalids') {
-            Object.keys(data[key]).forEach(prop => {
+            Object.keys(data[key]).reduce((prev, prop) => {
               if (typeof hook[key][prop] === 'undefined' && (updateKey === null || prop === updateKey)) {
                 hook[key][prop] = new Prop(
                   accessor,
@@ -1622,7 +1627,7 @@ export default class Endpoint {
                 }
                 hook[key][prop].changed(change ? (typeof data[key][prop].changed === 'function' ? data[key][prop].changed() : false) : false)
               }
-            })
+            }, {})
           }
         } else {
           prop = (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined' && typeof map.props[key] !== 'undefined') ? map.props[key] : key
@@ -1646,7 +1651,7 @@ export default class Endpoint {
             }
           }
         }
-      })
+      }, {})
       return (updateKey === null ? accessor : (accessor.reserved(updateKey) ? accessor.invalid[updateKey] : accessor[updateKey]))
     }
 
@@ -1655,21 +1660,21 @@ export default class Endpoint {
      */
     accessor.clear = (keep = ['id'], change = false) => {
       // Stop Running Property Requests
-      Object.keys(cancelers).forEach(key => {
+      Object.keys(cancelers).reduce((prev, key) => {
         if (cancelers[key] !== null) {
           cancelers[key]()
         }
-      })
+      }, {})
       // Reset loaders
       accessor.loading = false
       accessor.loaders = []
       // Reset properties
-      Object.keys(accessor).forEach(key => {
+      Object.keys(accessor).reduce((prev, key) => {
         if (!accessor.reserved(key) && keep.indexOf(key) === -1 && accessor[key].value !== null) {
           accessor[key].value = null
           accessor[key].changed(change)
         }
-      })
+      }, {})
       // Empty invalids
       accessor.invalids = {}
       accessor.children = []
@@ -1683,23 +1688,23 @@ export default class Endpoint {
     accessor.props = (reference = false, apiReady = false) => {
       let obj = {}
       if (reference) {
-        Object.keys(accessor).forEach(key => {
+        Object.keys(accessor).reduce((prev, key) => {
           if (!accessor.reserved(key)) {
             obj[key] = accessor[key]
           }
-        })
-        Object.keys(accessor.invalids).forEach(key => {
+        }, {})
+        Object.keys(accessor.invalids).reduce((prev, key) => {
           obj[key] = accessor[key]
-        })
+        }, {})
       } else {
-        Object.keys(accessor).forEach(key => {
+        Object.keys(accessor).reduce((prev, key) => {
           if (!accessor.reserved(key)) {
             obj[key] = apiReady ? accessor[key].apiValue() : accessor[key].value
           }
-        })
-        Object.keys(accessor.invalids).forEach(key => {
+        }, {})
+        Object.keys(accessor.invalids).reduce((prev, key) => {
           obj[key] = apiReady ? accessor.invalids[key].apiValue() : accessor.invalids[key].value
-        })
+        }, {})
       }
       return obj
     }
@@ -1712,33 +1717,33 @@ export default class Endpoint {
       let obj = {}
       let array = []
       if (reference) {
-        Object.keys(accessor).forEach(key => {
+        Object.keys(accessor).reduce((prev, key) => {
           if (!accessor.reserved(key)) {
             if (accessor[key].changed()) {
               arr ? array.push(accessor[key]) : obj[key] = accessor[key]
             }
           }
-        })
-        Object.keys(accessor.invalids).forEach(key => {
+        }, {})
+        Object.keys(accessor.invalids).reduce((prev, key) => {
           if (accessor.invalids[key].changed()) {
             arr ? array.push(accessor.invalids[key]) : obj[key] = accessor.invalids[key]
           }
-        })
+        }, {})
       } else {
-        Object.keys(accessor).forEach(key => {
+        Object.keys(accessor).reduce((prev, key) => {
           if (!accessor.reserved(key)) {
             if (accessor[key].changed()) {
               let val = apiReady ? accessor[key].apiValue() : accessor[key].value
               arr ? array.push(key, val) : obj[key] = val
             }
           }
-        })
-        Object.keys(accessor.invalids).forEach(key => {
+        }, {})
+        Object.keys(accessor.invalids).reduce((prev, key) => {
           if (accessor.invalids[key].changed()) {
             let val = apiReady ? accessor.invalids[key].apiValue() : accessor.invalids[key].value
             arr ? array.push([key, val]) : obj[key] = val
           }
-        })
+        }, {})
       }
       return arr ? array : obj
     }
@@ -1757,9 +1762,10 @@ export default class Endpoint {
       let cl = new Endpoint(accessor, accessor.shared.controller, accessor.shared.defaultApi, accessor.shared.predefined, accessor.shared.config)
       cl.raw = clone({}, accessor.raw)
       cl.set(accessor, change)
-      accessor.children.forEach(child => {
+      for (let i = 0, l = accessor.children.length; i < l; i++ ) {
+        let child = accessor.children[i]
         cl.children.push(child.clone(change))
-      })
+      }
       return cl
     }
 
@@ -1774,25 +1780,25 @@ export default class Endpoint {
       try {
         // Clone props
         if (reference) {
-          Object.keys(props).forEach(key => {
+          Object.keys(props).reduce((prev, key) => {
             if (apiReady) {
               reverse[key] = clone({}, props[key].apiValue())
             } else {
               reverse[key] = clone({}, props[key].value)
             }
-          })
+          }, {})
         } else {
           reverse = clone({}, props)
         }
         if (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined') {
           // Replace keys in props with mappings
-          Object.keys(map.props).forEach(key => {
+          Object.keys(map.props).reduce((prev, key) => {
             if (typeof reverse[map.props[key]] !== 'undefined') {
               // @note - If keys in props Collides with mapping, its overwritten
               reverse[key] = reverse[map.props[key]]
               delete reverse[map.props[key]]
             }
-          })
+          }, {})
         }
       } catch (error) {
         console.error(error)
@@ -1806,11 +1812,11 @@ export default class Endpoint {
     accessor.removeIdentifiers = (props, endpoint = accessor.shared.endpoint, map = accessor.shared.map) => {
       let path = (map !== null && typeof map !== 'undefined') ? map.endpoint : endpoint
       let identifiers = accessor.identifiers(path)
-      Object.keys(props).forEach(key => {
+      Object.keys(props).recude((prev, key) => {
         if (typeof identifiers[key] !== 'undefined') {
           delete props[key]
         }
-      })
+      }, {})
       return props
     }
 
@@ -1822,7 +1828,8 @@ export default class Endpoint {
       // Resolve Identifiers. Ex.: {id} or {/parentId} etc...
       if (path.indexOf('}') !== '-1') {
         let optionals = path.split('}')
-        optionals.forEach(opt => {
+        for (let i = 0, l = optionals.length; i < l; i++ ) {
+          let opt = optionals[i]
           let index = opt.indexOf('{')
           if (index !== -1) {
             let hook = opt.substring(index) + '}'
@@ -1837,7 +1844,7 @@ export default class Endpoint {
               hook: hook
             }
           }
-        })
+        }
       }
       return identifiers
     }
