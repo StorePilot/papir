@@ -1754,13 +1754,13 @@ export default class Endpoint {
      * Clone Endpoint
      */
     accessor.clone = (change = true) => {
-      let clone = new Endpoint(accessor, accessor.shared.controller, accessor.shared.defaultApi, accessor.shared.predefined, accessor.shared.config)
-      clone.raw = clone({}, accessor.raw)
-      clone.set(accessor, change)
+      let cl = new Endpoint(accessor, accessor.shared.controller, accessor.shared.defaultApi, accessor.shared.predefined, accessor.shared.config)
+      cl.raw = clone({}, accessor.raw)
+      cl.set(accessor, change)
       accessor.children.forEach(child => {
-        clone.children.push(child.clone(change))
+        cl.children.push(child.clone(change))
       })
-      return clone
+      return cl
     }
 
     /**

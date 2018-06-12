@@ -80,8 +80,8 @@ export default class Requester {
     }
 
     this.objMerge = (target, custom) => {
-      let clone = Object.assign({}, target) // Ensures target not to inherit params from custom
-      return Object.assign(clone, custom)
+      let cl = Object.assign({}, target) // Ensures target not to inherit params from custom
+      return Object.assign(cl, custom)
     }
 
     this.conf = this.objMerge(this.conf, customConf)

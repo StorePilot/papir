@@ -2,7 +2,7 @@
   "name": "papir",
   "productName": "Papir",
   "description": "Rest API Modelling library and Explorer",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "license": "ISC",
   "main": "./src/logic/papir.js",
   "author": "StorePilot",

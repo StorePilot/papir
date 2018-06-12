@@ -231,13 +231,13 @@ export default class Prop {
      * Clones the Property
      */
     accessor.clone = () => {
-      let clone = new Prop(parent, accessor.key, accessor.value, accessor.config, accessor.transpiler)
+      let cl = new Prop(parent, accessor.key, accessor.value, accessor.config, accessor.transpiler)
       try {
-        clone.value = clone({}, accessor.value)
+        cl.value = clone({}, accessor.value)
       } catch (error) {
         console.error(error)
       }
-      return clone
+      return cl
     }
   }
 }
