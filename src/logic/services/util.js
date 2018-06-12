@@ -409,7 +409,7 @@ export default new Util()
 
 let clone = (clone, obj) => {
   for(let i in obj) {
-    clone[i] = (typeof obj[i] === 'object' && obj[i] !== null) ? x(obj[i].constructor(), obj[i]) : obj[i]
+    clone[i] = (typeof obj[i] === 'object' && obj[i] !== null) ? clone(obj[i].constructor(), obj[i]) : obj[i]
   }
   return clone
 }
