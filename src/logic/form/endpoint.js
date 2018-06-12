@@ -1590,29 +1590,31 @@ export default class Endpoint {
      * Set / Update Properties
      * Data = Either Endpoint Model or raw JSON if raw = true
      */
-    accessor.set = (data, change = true, raw = false, updateKey = null, map = accessor.shared.map) => {
+    accessor.set = (data, change = true, raw = false, updateKey = null, map = null) => {
+      let nokey = updateKey === null
       Object.keys(data).reduce((prev, key) => {
+        let alive = nokey || key === updateKey
+        let reserved = accessor.reserved(key)
         let hook = accessor
-        let prop = key
         if (!raw) {
-          if (!accessor.reserved(prop) && typeof hook[prop] === 'undefined' && (updateKey === null || prop === updateKey)) {
-            hook[prop] = new Prop(
+          if (!reserved && typeof hook[key] === 'undefined' && alive) {
+            hook[key] = new Prop(
               accessor,
-              prop,
+              key,
               data[key].value,
               typeof data[key].config !== 'undefined' ? data[key].config : {},
               data[key].transpiler
             )
-          } else if (!accessor.reserved(prop) && (updateKey === null || prop === updateKey) && hook[prop].value !== data[key].value) {
-            hook[prop].value = data[key].value
+          } else if (!reserved && alive && hook[key].value !== data[key].value) {
+            hook[key].value = data[key].value
             if (typeof data[key].config !== 'undefined') {
-              hook[prop].config = Object.assign(hook[prop].config, data[key].config)
+              hook[key].config = Object.assign(hook[key].config, data[key].config)
             }
-            hook[prop].changed(change ? (typeof data[key].changed === 'function' ? data[key].changed() : false) : false)
-          }
-          if (key === 'invalids') {
+            hook[key].changed(change ? (typeof data[key].changed === 'function' ? data[key].changed() : false) : false)
+          } else if (key === 'invalids') {
             Object.keys(data[key]).reduce((prev, prop) => {
-              if (typeof hook[key][prop] === 'undefined' && (updateKey === null || prop === updateKey)) {
+              let living = nokey || prop === updateKey
+              if (typeof hook[key][prop] === 'undefined' && living) {
                 hook[key][prop] = new Prop(
                   accessor,
                   prop,
@@ -1620,7 +1622,7 @@ export default class Endpoint {
                   typeof data[key].config !== 'undefined' ? data[key].config : {},
                   data[key].transpiler
                 )
-              } else if ((updateKey === null || prop === updateKey) && hook[key][prop].value !== data[key][prop].value) {
+              } else if (living && hook[key][prop].value !== data[key][prop].value) {
                 hook[key][prop].value = data[key][prop].value
                 if (typeof data[key][prop].config !== 'undefined') {
                   hook[key][prop].config = Object.assign(hook[key][prop].config, data[key][prop].config)
@@ -1630,9 +1632,12 @@ export default class Endpoint {
             }, {})
           }
         } else {
-          prop = (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined' && typeof map.props[key] !== 'undefined') ? map.props[key] : key
-          if (updateKey === null || prop === updateKey) {
-            if (accessor.reserved(prop)) {
+          if (map === null) {
+            map = accessor.shared.map
+          }
+          let prop = (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined' && typeof map.props[key] !== 'undefined') ? map.props[key] : key
+          if (alive) {
+            if (reserved) {
               hook = accessor.invalids
             }
             if (typeof hook[prop] !== 'undefined' && hook[prop].value !== data[key]) {
