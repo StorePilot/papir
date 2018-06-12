@@ -1,3 +1,4 @@
+import { clone } from '../services/util'
 /**
  * Prop
  */
@@ -14,7 +15,7 @@ export default class Prop {
      * Public Variables
      */
     try {
-      accessor.value = JSON.parse(JSON.stringify(value))
+      accessor.value = clone({}, value)
     } catch (e) {
       try {
         accessor.value = value.clone()
@@ -83,7 +84,7 @@ export default class Prop {
       let isChanged = false
       if (changed !== null && !changed) {
         try {
-          value = JSON.parse(JSON.stringify(accessor.value))
+          value = clone({}, accessor.value)
         } catch (e) {
           try {
             value = accessor.value.clone()
@@ -232,7 +233,7 @@ export default class Prop {
     accessor.clone = () => {
       let clone = new Prop(parent, accessor.key, accessor.value, accessor.config, accessor.transpiler)
       try {
-        clone.value = JSON.parse(JSON.stringify(accessor.value))
+        clone.value = clone({}, accessor.value)
       } catch (error) {
         console.error(error)
       }

@@ -1,6 +1,7 @@
 import util from './util'
 import axios from 'axios'
 import sign from './sign'
+import { clone } from './util'
 
 /**
  * Requester
@@ -459,7 +460,7 @@ export default class Requester {
 
     this.getTokenRequest = (url) => {
       let scope = this
-      let conf = JSON.parse(JSON.stringify(this.getConf))
+      let conf = clone({}, this.getConf)
       conf.addDataToQuery = false
       conf.authHeader = true
       return new Promise((resolve, reject) => {
@@ -474,7 +475,7 @@ export default class Requester {
     this.getTokenAccess = (url, requestToken, requestTokenSecret, verifierToken) => {
       url = url + '?oauth_verifier=' + verifierToken
       let scope = this
-      let conf = JSON.parse(JSON.stringify(this.getConf))
+      let conf = clone({}, this.getConf)
       conf.addDataToQuery = false
       conf.authHeader = true
       conf.key = requestToken

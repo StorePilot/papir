@@ -1,6 +1,7 @@
 import Prop from './prop'
 import Query from './query'
 import axios from 'axios'
+import { clone } from '../services/util'
 
 /**
  * Endpoint
@@ -144,7 +145,7 @@ export default class Endpoint {
           map = accessor.shared.api.mappings[accessor.shared.endpoint]
           if (typeof map !== 'undefined' && typeof map.config !== 'undefined' && map.config.constructor === Object) {
             // Mapped Config (config level 1 - greater is stronger)
-            accessor.shared.config = Object.assign(JSON.parse(JSON.stringify(accessor.shared.config)), map.config)
+            accessor.shared.config = Object.assign(clone({}, accessor.shared.config), map.config)
           }
         } catch (e) { console.error(e) }
         return map
@@ -158,7 +159,7 @@ export default class Endpoint {
         accessor.shared.requester = accessor.shared.api.requester
         accessor.shared.map = resolveMap()
         // Custom Config (config level 2 - greater is stronger)
-        accessor.shared.config = Object.assign(JSON.parse(JSON.stringify(accessor.shared.config)), config)
+        accessor.shared.config = Object.assign(clone({}, accessor.shared.config), config)
         accessor.shared.buildProps(accessor.shared.map, accessor.shared.predefined)
       } else {
         console.error('No apis is hooked to Controller', accessor.shared.controller)
@@ -328,7 +329,7 @@ export default class Endpoint {
      * Handle Mapping
      */
     accessor.shared.handleMapping = (response, key = null, batch, multiple, map = accessor.shared.map) => {
-      let conf = JSON.parse(JSON.stringify(accessor.shared.config))
+      let conf = clone({}, accessor.shared.config)
       return new Promise((resolve, reject) => {
         let resolved = false
         let data = response.data // Raw from server
@@ -895,7 +896,7 @@ export default class Endpoint {
       batch = false
     ) => {
       // Custom Request Config (config level 3 - greater is stronger)
-      conf = Object.assign(JSON.parse(JSON.stringify(accessor.shared.config)), conf)
+      conf = Object.assign(clone({}, accessor.shared.config), conf)
       if (canceler !== false) {
         let cancelHandler = accessor.shared.handleCancellation(cancelers[canceler])
         cancelers[canceler] = cancelHandler.cancellation
@@ -1754,7 +1755,7 @@ export default class Endpoint {
      */
     accessor.clone = (change = true) => {
       let clone = new Endpoint(accessor, accessor.shared.controller, accessor.shared.defaultApi, accessor.shared.predefined, accessor.shared.config)
-      clone.raw = JSON.parse(JSON.stringify(accessor.raw))
+      clone.raw = clone({}, accessor.raw)
       clone.set(accessor, change)
       accessor.children.forEach(child => {
         clone.children.push(child.clone(change))
@@ -1775,13 +1776,13 @@ export default class Endpoint {
         if (reference) {
           Object.keys(props).forEach(key => {
             if (apiReady) {
-              reverse[key] = JSON.parse(JSON.stringify(props[key].apiValue()))
+              reverse[key] = clone({}, props[key].apiValue())
             } else {
-              reverse[key] = JSON.parse(JSON.stringify(props[key].value))
+              reverse[key] = clone({}, props[key].value)
             }
           })
         } else {
-          reverse = JSON.parse(JSON.stringify(props))
+          reverse = clone({}, props)
         }
         if (map !== null && typeof map !== 'undefined' && typeof map.props !== 'undefined') {
           // Replace keys in props with mappings

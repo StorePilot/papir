@@ -3,6 +3,7 @@ import Requester from './services/requester'
 import Endpoint from './form/endpoint'
 import List from './form/list'
 import Prop from './form/prop'
+import { clone } from './services/util'
 
 /**
  * Papir
@@ -44,3 +45,4 @@ export { Requester as Requester }
 export { Endpoint as Endpoint }
 export { Prop as Prop }
 export { List as List }
+export { clone as clone }
