@@ -217,7 +217,7 @@ export default class Prop {
       if (accessor.transpiler !== null) {
         return accessor.transpiler(accessor)
       } else if (
-        (accessor.value === null || (accessor.value.constructor === Array && accessor.value.length === 0)) &&
+        (accessor.value === null || typeof accessor.value === 'undefined' || (accessor.value.constructor === Array && accessor.value.length === 0)) &&
         accessor.config.emptyArrayToZero
       ) {
         return 0
