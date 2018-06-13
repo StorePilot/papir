@@ -339,48 +339,47 @@ export default class Endpoint {
         let headers = response.headers // In lowercase
         try {
           let parsed = data
-          if (parsed.constructor !== Object && parsed.constructor !== Array) {
+          let isObjOrArray = parsed.constructor === Object || parsed.constructor === Array
+          if (!isObjOrArray) {
             parsed = JSON.parse(parsed)
           }
-          if (typeof parsed !== 'undefined' && parsed !== null && (parsed.constructor === Object || parsed.constructor === Array)) {
+          if (typeof parsed !== 'undefined' && parsed !== null && isObjOrArray) {
             if (!batch && !multiple) {
               // Parse Data
               response = accessor.set(parsed, false, true, key)
             } else if (batch && map !== null && typeof map !== 'undefined') {
-              if (parsed !== null && parsed.constructor === Object) {
+              if (parsed.constructor === Object) {
                 let match = 0
-                if (typeof map.batch !== 'undefined') {
+                let hasBatch = map.batch !== null && typeof map.batch !== 'undefined'
+                if (hasBatch) {
                   Object.keys(map.batch).reduce((prev, key) => {
-                    if (typeof parsed[key] !== 'undefined') {
+                    if (typeof parsed[map.batch[key]] !== 'undefined') {
                       match++
                     }
                   }, {})
                 }
                 // If response has batch mapping keys, resolve by keys
-                if (match > 0 || parsed.constructor === Array) {
+                if (match > 0) {
+                  let deleteKey = (typeof map.batch.delete !== 'undefined' && map.batch.delete !== null) ? map.batch.delete : 'delete'
                   // Exchange all without delete
-                  Object.keys(parsed).reduce((prev, key) => {
-                    let method = parsed[key]
-                    if (
-                      (typeof map.batch !== 'undefined' && typeof map.batch.delete !== 'undefined' && method !== map.batch.delete) ||
-                      ((typeof map.batch === 'undefined' || typeof map.batch.delete === 'undefined') && method !== 'delete')
-                    ) {
-                      for (let i = 0, l = method.length; i < l; i++ ) {
-                        let child = method[i]
+                  Object.keys(parsed).reduce((prev, method) => {
+                    // Exchange updated
+                    if (method !== deleteKey) {
+                      for (let i = 0, l = parsed[method].length; i < l; i++ ) {
+                        let child = parsed[method][i]
                         let endpoint = new Endpoint(
                           accessor,
                           accessor.shared.controller,
                           accessor.shared.defaultApi,
-                          Object.assign(child,
-                            accessor.shared.predefined
-                          ),
+                          Object.assign(child, accessor.shared.predefined),
                           Object.assign(conf, {multiple: false})
                         )
                         accessor.exchange(endpoint)
                       }
                     } else {
-                      for (let i = 0, l = method.length; i < l; i++ ) {
-                        let child = method[i]
+                      // Remove deleted
+                      for (let i = 0, l = parsed[method].length; i < l; i++ ) {
+                        let child = parsed[method][i]
                         let endpoint = new Endpoint(
                           accessor,
                           accessor.shared.controller,
@@ -403,7 +402,7 @@ export default class Endpoint {
                   )
                   accessor.exchange(endpoint)
                 }
-              } else if (parsed.constructor === Array) {
+              } else {
                 // If response is array expect multiple instances
                 for (let i = 0, l = parsed.length; i < l; i++ ) {
                   let obj = parsed[i]
@@ -520,7 +519,7 @@ export default class Endpoint {
      * Exchange endpoint in accessor.children with match from input
      * @returns Endpoint (exchanged) | Endpoint.children (On Remove) | false (If no match found)
      */
-    accessor.exchange = (endpoint, reliable = false, remove = false, map = accessor.shared.map) => {
+    accessor.exchange = (endpoint, reliable = false, remove = false, keep = true, map = accessor.shared.map) => {
       // @note - This could be more heavy and alot slower
       let smartFind = (endpoint) => {
         // Reliable.
@@ -599,7 +598,7 @@ export default class Endpoint {
       let resolveCreationIdentifier = (endpoint) => {
         let match
         for (let i = 0, l = accessor.children.length; i < l; i++ ) {
-          let child = accessor.children
+          let child = accessor.children[i]
           if (
             child.shared.map !== null &&
             typeof child.shared.map !== 'undefined' &&
@@ -875,7 +874,10 @@ export default class Endpoint {
         // Handle Exchange
         return exchange.set(endpoint, false)
       } else if (!remove) {
-        // If no match found, push to children
+        // If no match found but keep, push to children
+        if (keep) {
+          accessor.children.push(endpoint)
+        }
         return false
       } else if (typeof exchange !== 'undefined') {
         // Handle Remove
@@ -1817,7 +1819,7 @@ export default class Endpoint {
     accessor.removeIdentifiers = (props, endpoint = accessor.shared.endpoint, map = accessor.shared.map) => {
       let path = (map !== null && typeof map !== 'undefined') ? map.endpoint : endpoint
       let identifiers = accessor.identifiers(path)
-      Object.keys(props).recude((prev, key) => {
+      Object.keys(props).reduce((prev, key) => {
         if (typeof identifiers[key] !== 'undefined') {
           delete props[key]
         }
