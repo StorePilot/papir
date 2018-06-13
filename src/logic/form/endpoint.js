@@ -387,7 +387,7 @@ export default class Endpoint {
                           Object.assign(child, accessor.shared.predefined),
                           Object.assign(conf, {multiple: false})
                         )
-                        accessor.exchange(endpoint, false, true)
+                        accessor.exchange(endpoint, true, false, true)
                       }
                     }
                   }, {})
@@ -454,13 +454,13 @@ export default class Endpoint {
               }, {})
             }
           }
+
           resolved = true
           resolve(response)
         } catch (error) {
           // Not valid JSON, go to next parser
         }
         // @todo - Add additional parsers. Ex. xml
-
         if (!resolved) {
           reject(new Error({
             error: 'Invalid Data',
@@ -519,7 +519,7 @@ export default class Endpoint {
      * Exchange endpoint in accessor.children with match from input
      * @returns Endpoint (exchanged) | Endpoint.children (On Remove) | false (If no match found)
      */
-    accessor.exchange = (endpoint, reliable = false, remove = false, keep = true, map = accessor.shared.map) => {
+    accessor.exchange = (endpoint, add = true, reliable = false, remove = false, map = accessor.shared.map) => {
       // @note - This could be more heavy and alot slower
       let smartFind = (endpoint) => {
         // Reliable.
@@ -874,8 +874,8 @@ export default class Endpoint {
         // Handle Exchange
         return exchange.set(endpoint, false)
       } else if (!remove) {
-        // If no match found but keep, push to children
-        if (keep) {
+        // If no match found but add by force, push to children
+        if (add) {
           accessor.children.push(endpoint)
         }
         return false
