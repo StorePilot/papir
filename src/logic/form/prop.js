@@ -84,7 +84,7 @@ export default class Prop {
       let isChanged = false
       if (changed !== null && !changed) {
         try {
-          value = clone({}, accessor.value)
+          value = JSON.parse(JSON.stringify(accessor.value))
         } catch (e) {
           try {
             value = accessor.value.clone()
