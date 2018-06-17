@@ -232,7 +232,7 @@ export default class Endpoint {
      * Url Resolver
      */
     accessor.shared.resolveUrl = (endpoint = accessor.shared.endpoint, map = accessor.shared.map, api = accessor.shared.api, args = null, batch = false) => {
-      let base = api !== null ? api.base : ''
+      let base = (api !== null && typeof api.base !== 'undefined') ? api.base : ''
       // Remove last slash if any from base
       if (base.length > 0 && base[(base.length - 1)] === '/') {
         base = base.slice(0, -1)
