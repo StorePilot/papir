@@ -16,11 +16,14 @@ export default class Prop {
      */
     try {
       accessor.value = clone({}, value)
+      accessor.raw = clone({}, value)
     } catch (e) {
       try {
         accessor.value = value.clone()
+        accessor.raw = value.clone()
       } catch (e) {
         accessor.value = value
+        accessor.raw = value
       }
     }
     accessor.transpiler = transpiler
@@ -49,7 +52,6 @@ export default class Prop {
     accessor.key = key
     accessor.loading = false
     accessor.loaders = []
-    accessor.raw = null
 
     /**
      * Private methods
