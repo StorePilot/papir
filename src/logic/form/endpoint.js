@@ -155,6 +155,7 @@ export default class Endpoint {
         if (accessor.shared.defaultApi === null) {
           accessor.shared.defaultApi = accessor.shared.endpoint.shared.defaultApi
         }
+        accessor.args = clone({}, accessor.shared.endpoint.args)
         accessor.set(accessor.shared.endpoint, false) // Replace props
         accessor.shared.config = accessor.shared.endpoint.shared.config // Replace config
         accessor.shared.endpoint = accessor.shared.endpoint.shared.endpoint // Replace endpoint string
