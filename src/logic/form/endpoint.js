@@ -28,6 +28,28 @@ export default class Endpoint {
     accessor.children = []
 
     /**
+     * Default arguments added to requests
+     */
+    accessor.args = {
+      fetch: [],
+      save: [],
+      custom: [],
+      create: [],
+      batch: [],
+      upload: [],
+      remove: [],
+      get: [],
+      post: [],
+      put: [],
+      patch: [],
+      delete: [],
+      head: [],
+      trace: [],
+      connect: [],
+      options: []
+    }
+
+    /**
      * Shared Variables
      */
     accessor.shared = {
@@ -71,6 +93,7 @@ export default class Endpoint {
         'connect',
         'options',
         // Property Methods
+        'args',
         'query',
         'set',
         'clone',
@@ -953,7 +976,7 @@ export default class Endpoint {
      */
     accessor.fetch = (
       apiSlug = accessor.shared.defaultApi,
-      args = null,
+      args = accessor.args.fetch,
       replace = true,
       perform = true
     ) => {
@@ -994,7 +1017,7 @@ export default class Endpoint {
      */
     accessor.save = (
       apiSlug = accessor.shared.defaultApi,
-      args = null,
+      args = accessor.args.save,
       replace = true,
       create = true,
       perform = true,
@@ -1063,7 +1086,7 @@ export default class Endpoint {
      */
     accessor.create = (
       apiSlug = accessor.shared.defaultApi,
-      args = null,
+      args = accessor.args.create,
       replace = true,
       save = true,
       perform = true,
@@ -1117,7 +1140,7 @@ export default class Endpoint {
      */
     accessor.remove = (
       apiSlug = accessor.shared.defaultApi,
-      args = null,
+      args = accessor.args.remove,
       replace = true,
       perform = true,
       map = accessor.shared.map
@@ -1170,7 +1193,7 @@ export default class Endpoint {
     accessor.upload = (
       file,
       apiSlug = accessor.shared.defaultApi,
-      args = null,
+      args = accessor.args.upload,
       replace = true,
       perform = true,
       method = 'POST',
@@ -1215,7 +1238,7 @@ export default class Endpoint {
     accessor.batch = (
       options = {},
       apiSlug = accessor.shared.defaultApi,
-      args = null,
+      args = accessor.args.batch,
       replace = true,
       perform = true,
       map = accessor.shared.map
@@ -1387,7 +1410,7 @@ export default class Endpoint {
     accessor.get = (
       apiSlug = accessor.shared.defaultApi,
       data = null,
-      args = null,
+      args = accessor.args.get,
       upload = false,
       promise = new Promise(resolve => resolve()),
       conf = {}
@@ -1410,7 +1433,7 @@ export default class Endpoint {
     accessor.post = (
       apiSlug = accessor.shared.defaultApi,
       data = null,
-      args = null,
+      args = accessor.args.post,
       upload = false,
       promise = new Promise(resolve => resolve()),
       conf = {}
@@ -1433,7 +1456,7 @@ export default class Endpoint {
     accessor.put = (
       apiSlug = accessor.shared.defaultApi,
       data = null,
-      args = null,
+      args = accessor.args.put,
       upload = false,
       promise = new Promise(resolve => resolve()),
       conf = {}
@@ -1456,7 +1479,7 @@ export default class Endpoint {
     accessor.patch = (
       apiSlug = accessor.shared.defaultApi,
       data = null,
-      args = null,
+      args = accessor.args.patch,
       upload = false,
       promise = new Promise(resolve => resolve()),
       conf = {}
@@ -1479,7 +1502,7 @@ export default class Endpoint {
     accessor.delete = (
       apiSlug = accessor.shared.defaultApi,
       data = null,
-      args = null,
+      args = accessor.args.delete,
       upload = false,
       promise = new Promise(resolve => resolve()),
       conf = {}
@@ -1502,7 +1525,7 @@ export default class Endpoint {
     accessor.head = (
       apiSlug = accessor.shared.defaultApi,
       data = null,
-      args = null,
+      args = accessor.args.head,
       upload = false,
       promise = new Promise(resolve => resolve()),
       conf = {}
@@ -1525,7 +1548,7 @@ export default class Endpoint {
     accessor.trace = (
       apiSlug = accessor.shared.defaultApi,
       data = null,
-      args = null,
+      args = accessor.args.trace,
       upload = false,
       promise = new Promise(resolve => resolve()),
       conf = {}
@@ -1548,7 +1571,7 @@ export default class Endpoint {
     accessor.connect = (
       apiSlug = accessor.shared.defaultApi,
       data = null,
-      args = null,
+      args = accessor.args.connect,
       upload = false,
       promise = new Promise(resolve => resolve()),
       conf = {}
@@ -1571,7 +1594,7 @@ export default class Endpoint {
     accessor.options = (
       apiSlug = accessor.shared.defaultApi,
       data = null,
-      args = null,
+      args = accessor.args.options,
       upload = false,
       promise = new Promise(resolve => resolve()),
       conf = {}
@@ -1767,6 +1790,7 @@ export default class Endpoint {
      */
     accessor.clone = (change = true) => {
       let cl = new Endpoint(accessor, accessor.shared.controller, accessor.shared.defaultApi, accessor.shared.predefined, accessor.shared.config)
+      cl.args = clone({}, accessor.args)
       cl.raw = clone({}, accessor.raw)
       cl.set(accessor, change)
       for (let i = 0, l = accessor.children.length; i < l; i++ ) {
