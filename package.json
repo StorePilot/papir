@@ -2,9 +2,9 @@
   "name": "papir",
   "productName": "Papir",
   "description": "Rest API Modelling library and Explorer",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "license": "ISC",
-  "main": "./src/logic/papir.js",
+  "main": "./lib/papir.js",
   "author": "StorePilot",
   "homepage": "https://github.com/StorePilot/papir#readme",
   "repository": {
@@ -29,6 +29,7 @@
     "clean": "node build/script.clean.js",
     "dev": "node build/script.dev.js",
     "build": "node build/script.build.js",
+    "release": "npx babel src/logic/ --out-file lib/papir.js",
     "lint": "eslint --ext .js,.vue src"
   },
   "dependencies": {
@@ -46,13 +47,9 @@
     "vuedraggable": "^2.14.1"
   },
   "devDependencies": {
+    "@babel/cli": "^7.4.3",
+    "@babel/core": "^7.4.3",
     "autoprefixer": "^6.4.0",
-    "babel-core": "^6.0.0",
-    "babel-eslint": "^7.0.0",
-    "babel-loader": "^7.1.2",
-    "babel-plugin-transform-runtime": "^6.0.0",
-    "babel-preset-env": "^1.6.1",
-    "babel-preset-stage-2": "^6.0.0",
     "colors": "^1.1.2",
     "connect-history-api-fallback": "^1.1.0",
     "css-loader": "^0.28.7",
