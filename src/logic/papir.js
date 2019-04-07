@@ -39,10 +39,13 @@ class Papir {
   }
 }
 let papir = new Papir()
-export { papir as papir }
-export { Controller as Controller }
-export { Requester as Requester }
-export { Endpoint as Endpoint }
-export { Prop as Prop }
-export { List as List }
-export { clone as clone }
+export {
+  papir,
+  clone
+}
+
+export { default as Controller } from './services/controller'
+export { default as Requester } from './services/requester'
+export { default as Endpoint } from './form/endpoint'
+export { default as List } from './form/list'
+export { default as Prop } from './form/prop'
