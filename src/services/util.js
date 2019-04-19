@@ -410,7 +410,11 @@ export default new Util()
 let clone = (target, obj) => {
   if (typeof obj === 'object' && obj !== null) {
     for (let i in obj) {
-      target[i] = (typeof obj[i] === 'object' && obj[i] !== null) ? clone(obj[i].constructor(), obj[i]) : obj[i]
+      try {
+        target[i] = (typeof obj[i] === 'object' && obj[i] !== null) ? clone(obj[i].constructor(), obj[i]) : obj[i]
+      } catch (e) {
+        target[i] = obj[i]
+      }
     }
   } else {
     return obj
