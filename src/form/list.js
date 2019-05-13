@@ -17,7 +17,7 @@ export default class List extends Endpoint {
         // Controller was not a constructor
       }
     } else if (
-      controller === null && Endpoint.shared && endpoint.shared.controller
+      controller === null && Endpoint.shared && Endpoint.shared.controller
     ) {
       // If controller is not set, assume endpoint already is a constructed Endpoint object
       endpoint = Endpoint
