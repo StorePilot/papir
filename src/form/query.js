@@ -134,9 +134,10 @@ export default class Query {
       return accessor.custom('page', value)
     }
 
-    accessor.perPage = (value = 12) => {
+    accessor.limit = (value = 12) => {
       return accessor.custom('per_page', value)
     }
+    accessor.perPage = accessor.limit
 
     accessor.category = (value = 0) => {
       return accessor.custom('category', value)
