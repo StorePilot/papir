@@ -939,7 +939,7 @@ export default class Endpoint {
       return new Promise((resolve, reject) => {
         // startLoader(method)
         let api = (accessor.shared.controller !== null && apiSlug !== null) ? accessor.shared.controller.apis[apiSlug] : accessor.shared.api
-        accessor.shared.requester[method.toLowerCase()](accessor.shared.resolveUrl(endpoint, accessor.shared.map, api, args, batch), promise, data, upload, conf).then(response => {
+        accessor.shared.requester[method.toLowerCase()](accessor.shared.resolveUrl(accessor.shared.endpoint, accessor.shared.map, api, args, batch), promise, data, upload, conf).then(response => {
           accessor.raw = response
           // stopLoader(method)
           resolve(response)

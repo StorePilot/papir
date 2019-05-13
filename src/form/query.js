@@ -6,7 +6,7 @@ export default class Query {
     let accessor = this
     let queries = []
     let argsMap = {}
-    if (endpoint.shared.map !== null && typeof endpoint.shared.map.args !== 'undefined') {
+    if (endpoint.shared.map && typeof endpoint.shared.map.args !== 'undefined') {
       argsMap = endpoint.shared.map.args
     }
 
