@@ -440,7 +440,7 @@ export default class Endpoint {
                   accessor.exchange(endpoint)
                 }
               }
-            } else if (multiple && map !== null && typeof map !== 'undefined') {
+            } else if (multiple) {
               if (response.config.method.toLowerCase() === 'get') {
                 accessor.children = []
               }
