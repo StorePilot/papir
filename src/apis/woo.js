@@ -7,12 +7,14 @@ export default class Woo {
   constructor(
     url = 'localhost',
     appname = 'MyApp',
-    client_id = '',
-    client_secret = '',
+    authenticaton = 'none',
+    client_id = '', // or nonce key
+    client_secret = '', // or nonce value
     salt = 'HMAC short living salt',
     pepper = 'HMAC short living pepper'
   ) {
     this.url = url
+    this.authenticaton = authenticaton
     this.client_id = client_id
     this.client_secret = client_secret
     this.token = crypto
@@ -89,7 +91,31 @@ export default class Woo {
   }
 
   authorize() {
-    if (this.url.substr(0, 5) === 'https') {
+    if (this.authenticaton === 'none') {
+      this.controller.config({
+        config: {
+          authentication(request) {
+            request.url.indexOf('?') === -1
+              ? (request.url += '?')
+              : (request.url += '&')
+            return request
+          }
+        }
+      })
+    } else if (this.authenticaton === 'nonce') {
+      this.controller.config({
+        config: {
+          authentication(request) {
+            request.url.indexOf('?') === -1
+              ? (request.url += '?')
+              : (request.url += '&')
+            this.client_id = this.client_id ? this.client_id : 'wp_nonce'
+            this.client_secret = this.client_secret ? this.client_secret : ''
+            return request + this.client_id + '=' + this.client_secret
+          }
+        }
+      })
+    } else if (this.url.substr(0, 5) === 'https') {
       this.controller.config({
         config: {
           authentication(request) {
