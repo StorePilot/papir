@@ -1670,13 +1670,21 @@ export default class Endpoint {
               hook[prop].value = data[key]
               hook[prop].changed(change)
             } else if (typeof hook[prop] === 'undefined') {
-              hook[prop] = new Prop(
-                accessor,
-                prop,
-                data[key],
-                typeof data[key].config !== 'undefined' ? data[key].config : {},
-                data[key].transpiler
-              )
+              if (data[key]) {
+                hook[prop] = new Prop(
+                  accessor,
+                  prop,
+                  data[key],
+                  typeof data[key].config !== 'undefined' ? data[key].config : {},
+                  data[key].transpiler
+                )
+              } else {
+                hook[prop] = new Prop(
+                  accessor,
+                  prop,
+                  data[key]
+                )
+              }
             } else {
               hook[prop].changed(change)
             }
