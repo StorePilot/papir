@@ -2,7 +2,7 @@
   "name": "papir",
   "productName": "Papir",
   "description": "Rest API Modelling library",
-  "version": "2.2.5",
+  "version": "2.2.6",
   "license": "ISC",
   "main": "./lib/papir.js",
   "author": "StorePilot",
