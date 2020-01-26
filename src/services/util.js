@@ -22,9 +22,7 @@ class Util {
     }
 
     this.stripUri = (url) => {
-      let a = document.createElement('a')
-      a.setAttribute('href', url)
-      return a.protocol + '//' + a.host + a.pathname
+      return url.split('?')[0].split('#')[0]
     }
 
     this.getParams = (url, delimiter = '&', splitter = '=', divider = '?') => {

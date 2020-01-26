@@ -12,7 +12,7 @@ class Sign {
         version: '1.0a',
         type: 'one_legged',
         algorithm: 'HMAC-SHA1',
-        url: location.href,
+        url: '',
         method: 'GET',
         key: '',
         secret: '',
@@ -47,7 +47,7 @@ class Sign {
         })
       })
 
-      if (conf.authentication === 'oauth' && conf.version === '1.0a') {
+      if ((typeof conf.authentication === 'function' || conf.authentication === 'oauth') && conf.version === '1.0a') {
         mergedParams = mergedParams.concat([
           {
             key: 'oauth_consumer_key',
