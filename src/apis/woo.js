@@ -11,7 +11,9 @@ export default class Woo {
     client_id = '', // or nonce key
     client_secret = '', // or nonce value
     salt = 'HMAC short living salt',
-    pepper = 'HMAC short living pepper'
+    pepper = 'HMAC short living pepper',
+    return_url = '',
+    callback_url = 'https://storepilot.lib.id/storepilot-service/callback/'
   ) {
     this.url = url
     this.authenticaton = authenticaton
@@ -45,48 +47,45 @@ export default class Woo {
         }
       ]
     })
+    if (!return_url) return_url = 'https://storepilot.lib.id/storepilot-service/return/?fallback_url=https://storepilot.com/account?fallback&installation_url=https://storepilot.com/account?authorized&token=' +
+      this.token
     this.authUrl =
       `${url}/wc-auth/v1/authorize?` +
       qs.stringify({
         app_name: appname,
         scope: 'read_write',
         user_id: this.token,
-        return_url:
-          'https://storepilot.lib.id/storepilot-service/return/?fallback_url=https://storepilot.com/account?fallback&installation_url=https://storepilot.com/account?authorized&token=' +
-          this.token,
-        callback_url: 'https://storepilot.lib.id/storepilot-service/callback/'
+        return_url: return_url,
+        callback_url: callback_url
       })
   }
 
-  authenticate() {
+  authenticate(service_url = 'https://storepilot.lib.id/storepilot-service/authorize/') {
     window.open(this.authUrl)
-    return this.validate()
+    return this.validate(service_url)
   }
 
-  validate() {
+  validate(service_url) {
     return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        axios
-          .post('https://storepilot.lib.id/storepilot-service/authorize/', {
-            token: this.token
-          })
-          .then(results => {
-            if (results.data.success) {
-              resolve(results.data.data)
-            } else {
-              this.validate()
-                .then(() => {
-                  resolve(results.data.data)
-                })
-                .catch(e => {
-                  reject(e)
-                })
-            }
-          })
-          .catch(e => {
-            reject(e)
-          })
-      }, 1000)
+      let validate = () => {
+        setTimeout(() => {
+          axios
+            .post(service_url, {
+              token: this.token
+            })
+            .then(results => {
+              if (results.data.success) {
+                resolve(results.data.data)
+              } else {
+                validate()
+              }
+            })
+            .catch(e => {
+              reject(e)
+            })
+        }, 1000)
+      }
+      validate()
     })
   }
 
