@@ -60,7 +60,7 @@ export default class Woo {
 
   authenticate() {
     window.open(this.authUrl)
-    this.validate()
+    return this.validate()
   }
 
   validate() {
