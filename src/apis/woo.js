@@ -66,6 +66,7 @@ export default class Woo {
   }
 
   validate(service_url) {
+    let timeout = 100
     return new Promise((resolve, reject) => {
       let validate = () => {
         setTimeout(() => {
@@ -77,7 +78,9 @@ export default class Woo {
               if (results.data.success) {
                 resolve(results.data.data)
               } else {
-                validate()
+                timeout--
+                if (timeout <= 0) reject(new Error('Timeout'))
+                else validate()
               }
             })
             .catch(e => {
