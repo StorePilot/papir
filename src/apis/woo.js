@@ -61,11 +61,11 @@ export default class Woo {
   }
 
   authenticate(service_url = 'https://storepilot.lib.id/storepilot-service/authorize/') {
-    window.open(this.authUrl)
-    return this.validate(service_url)
+    let win = window.open(this.authUrl)
+    return this.validate(service_url, win)
   }
 
-  validate(service_url) {
+  validate(service_url, win) {
     let timeout = 100
     return new Promise((resolve, reject) => {
       let validate = () => {
@@ -76,7 +76,7 @@ export default class Woo {
             })
             .then(results => {
               if (results.data.success) {
-                resolve(results.data.data)
+                resolve({ data: results.data.data, window: win })
               } else {
                 timeout--
                 if (timeout <= 0) reject(new Error('Timeout'))
