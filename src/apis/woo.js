@@ -61,7 +61,9 @@ export default class Woo {
   }
 
   authenticate(service_url = 'https://storepilot.lib.id/storepilot-service/authorize/') {
-    let win = window.open(this.authUrl)
+    let top = window.top.screenY + 80
+    let left = window.top.outerWidth / 2 + window.top.screenX - (700 / 2)
+    let win = window.open(this.authUrl, 'StorePilot', `directories=no,toolbar=no,menubar=no,width=700,height=690,top=${top},left=${left}`)
     return this.validate(service_url, win)
   }
 
